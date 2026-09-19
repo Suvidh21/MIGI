@@ -1,9 +1,19 @@
 
 # DR. MIGI — AI Healthcare Companion
+<p align="center">
+  <img src="images/Screenshot%202026-09-19%20153636.png" width="850">
+</p>
 
 DR. MIGI is an intelligent AI healthcare companion designed to assist doctors with **longitudinal patient analysis and clinical decision support**. This repository is built in generations — each one adding a new layer of capability.
 
 > **Current Status: Generation 1 (Clinical Brain) ✅ + Generation 2 (Memory/RAG) ✅**
+<p align="center">
+  <img src="images/Screenshot%202026-09-19%20150511.png" width="850">
+</p>
+
+<p align="center">
+  <img src="images/Screenshot%202026-09-19%20153306.png" width="850">
+</p>
 
 ---
 "DR.MIGI is an ongoing research and engineering project focused on building an AI healthcare assistant while exploring Retrieval-Augmented Generation (RAG), local LLM inference, memory systems, prompt engineering, and modern AI architectures." Rather than being a finished product, this repository documents the evolution of the project—from foundational concepts and experiments to production-oriented implementations.
