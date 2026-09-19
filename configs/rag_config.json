@@ -1,0 +1,8 @@
+{
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "vector_db_path": "./outputs/chroma_db",
+  "collection_name": "migi_patients",
+  "top_k_retrieval": 5,
+  "min_relevance_score": 0.0,
+  "chunk_overlap_sentences": 1
+}

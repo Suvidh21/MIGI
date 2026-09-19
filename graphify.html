@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DR. MIGI — Graphify Architecture Map</title>
+    <meta name="description" content="Interactive codebase architecture graph for DR. MIGI AI Healthcare Companion">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #06080d;
+            --bg-secondary: #0c1018;
+            --bg-card: #111827;
+            --bg-hover: #1a2236;
+            --border: #1e293b;
+            --border-glow: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-blue: #38bdf8;
+            --accent-cyan: #22d3ee;
+            --accent-purple: #a78bfa;
+            --accent-pink: #f472b6;
+            --accent-green: #4ade80;
+            --accent-orange: #fb923c;
+            --accent-red: #f87171;
+            --accent-yellow: #facc15;
+        }
+
+        html, body {
+            width: 100%; height: 100%;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            overflow: hidden;
+        }
+
+        /* ─── Canvas ─── */
+        #graph-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ─── Header ─── */
+        .header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 28px;
+            background: linear-gradient(180deg, rgba(6,8,13,0.95) 0%, rgba(6,8,13,0.7) 100%);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 0 24px rgba(56,189,248,0.25);
+        }
+
+        .header-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .header-subtitle {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .legend-chip:hover {
+            border-color: var(--border-glow);
+            background: var(--bg-hover);
+        }
+
+        .legend-chip.active {
+            border-color: currentColor;
+            opacity: 1;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ─── Detail Panel ─── */
+        .detail-panel {
+            position: fixed;
+            right: -420px;
+            top: 68px;
+            bottom: 0;
+            width: 400px;
+            z-index: 90;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border);
+            padding: 28px 24px;
+            overflow-y: auto;
+            transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: -8px 0 40px rgba(0,0,0,0.5);
+        }
+
+        .detail-panel.open {
+            right: 0;
+        }
+
+        .detail-panel .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .detail-panel .close-btn:hover {
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        .detail-type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .detail-name {
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+            letter-spacing: -0.02em;
+        }
+
+        .detail-file {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+            padding: 6px 10px;
+            background: var(--bg-card);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section h3 {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+        }
+
+        .detail-section p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .detail-methods {
+            list-style: none;
+        }
+
+        .detail-methods li {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            padding: 6px 10px;
+            margin-bottom: 4px;
+            background: var(--bg-card);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            color: var(--accent-cyan);
+        }
+
+        .detail-deps {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .detail-dep-chip {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        /* ─── Stats Bar ─── */
+        .stats-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 28px;
+            background: linear-gradient(0deg, rgba(6,8,13,0.95) 0%, rgba(6,8,13,0.7) 100%);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        .stats-bar .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stats-bar .stat-value {
+            color: var(--accent-blue);
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ─── Controls ─── */
+        .controls {
+            position: fixed;
+            bottom: 46px;
+            left: 20px;
+            z-index: 80;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            box-shadow: 0 0 16px rgba(56,189,248,0.15);
+        }
+
+        /* ─── SVG Styles ─── */
+        .link {
+            stroke-opacity: 0.2;
+            fill: none;
+        }
+
+        .link:hover {
+            stroke-opacity: 0.6;
+        }
+
+        .node-group {
+            cursor: pointer;
+        }
+
+        .node-circle {
+            transition: r 0.3s, stroke-width 0.3s;
+        }
+
+        .node-group:hover .node-circle {
+            stroke-width: 3;
+        }
+
+        .node-label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            fill: var(--text-primary);
+            pointer-events: none;
+            text-anchor: middle;
+            paint-order: stroke;
+            stroke: var(--bg-primary);
+            stroke-width: 3px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .node-sublabel {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 400;
+            fill: var(--text-muted);
+            pointer-events: none;
+            text-anchor: middle;
+            font-size: 9px;
+            paint-order: stroke;
+            stroke: var(--bg-primary);
+            stroke-width: 2.5px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ─── Glow filter ─── */
+        .glow-filter {
+            filter: url(#glow);
+        }
+
+        /* ─── Tooltip ─── */
+        .tooltip {
+            position: fixed;
+            z-index: 200;
+            pointer-events: none;
+            padding: 8px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            font-size: 0.78rem;
+            color: var(--text-primary);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            opacity: 0;
+            transition: opacity 0.15s;
+            max-width: 280px;
+        }
+
+        .tooltip.visible { opacity: 1; }
+
+        .tooltip .tt-type {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 2px;
+        }
+
+        .tooltip .tt-name {
+            font-weight: 700;
+            font-size: 0.88rem;
+        }
+
+        .tooltip .tt-desc {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        /* ─── Animations ─── */
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 0.4; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
+
+        .pulse-ring {
+            animation: pulse-ring 2s ease-out infinite;
+        }
+
+        /* ─── Loading ─── */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            transition: opacity 0.6s;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent-blue);
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-text {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { background: var(--border-glow); border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <!-- Loading -->
+    <div class="loading-overlay" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Mapping DR. MIGI Architecture…</div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="header-logo">🧬</div>
+            <div>
+                <div class="header-title">DR. MIGI — Graphify</div>
+                <div class="header-subtitle">Interactive Codebase Architecture Map</div>
+            </div>
+        </div>
+        <div class="header-right" id="legend">
+            <!-- populated dynamically -->
+        </div>
+    </header>
+
+    <!-- SVG Canvas -->
+    <svg id="graph-canvas"></svg>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip">
+        <div class="tt-type" id="tt-type"></div>
+        <div class="tt-name" id="tt-name"></div>
+        <div class="tt-desc" id="tt-desc"></div>
+    </div>
+
+    <!-- Detail Panel -->
+    <div class="detail-panel" id="detail-panel">
+        <div class="close-btn" id="close-panel" title="Close">✕</div>
+        <div id="detail-content"></div>
+    </div>
+
+    <!-- Zoom Controls -->
+    <div class="controls">
+        <div class="control-btn" id="zoom-in" title="Zoom In">+</div>
+        <div class="control-btn" id="zoom-out" title="Zoom Out">−</div>
+        <div class="control-btn" id="zoom-fit" title="Fit All">⊞</div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div style="display:flex; gap:24px;">
+            <div class="stat">Nodes: <span class="stat-value" id="stat-nodes">0</span></div>
+            <div class="stat">Edges: <span class="stat-value" id="stat-edges">0</span></div>
+            <div class="stat">Modules: <span class="stat-value" id="stat-modules">0</span></div>
+        </div>
+        <div style="display:flex; gap:20px; align-items:center;">
+            <span>Drag nodes · Scroll to zoom · Click to inspect</span>
+            <span style="color:var(--accent-blue); font-weight:600;">Graphify v1.0</span>
+        </div>
+    </div>
+
+    <!-- D3.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script>
+    // ═══════════════════════════════════════════════════════════════
+    //  DR. MIGI — CODEBASE GRAPH DATA
+    // ═══════════════════════════════════════════════════════════════
+
+    const NODE_TYPES = {
+        'pipeline':  { color: '#38bdf8', label: 'Pipeline / Orchestrator', icon: '🔗' },
+        'engine':    { color: '#a78bfa', label: 'LLM Engine',              icon: '🧠' },
+        'model':     { color: '#f472b6', label: 'Model / Loader',         icon: '⚙️' },
+        'rag':       { color: '#22d3ee', label: 'RAG Component',          icon: '🔍' },
+        'prompt':    { color: '#4ade80', label: 'Prompts / Templates',    icon: '📝' },
+        'data':      { color: '#fb923c', label: 'Data / Config',          icon: '📊' },
+        'util':      { color: '#facc15', label: 'Utility',                icon: '🛠️' },
+        'ui':        { color: '#f87171', label: 'UI / Application',       icon: '🖥️' },
+        'test':      { color: '#818cf8', label: 'Test Suite',             icon: '🧪' },
+        'script':    { color: '#a3e635', label: 'Script',                 icon: '📜' },
+        'notebook':  { color: '#e879f9', label: 'Notebook / Demo',       icon: '📓' },
+        'external':  { color: '#64748b', label: 'External Dependency',    icon: '📦' },
+    };
+
+    const nodes = [
+        // ─── Application Layer ───
+        {
+            id: 'app', name: 'app.py', type: 'ui', size: 38,
+            file: 'app.py',
+            description: 'Streamlit Web UI — the clinical intelligence platform. Provides patient selection, clinical inquiry input, RAG analysis execution, performance metrics display, and an interactive explainer tab.',
+            methods: ['get_rag_pipeline()', 'tab_query', 'tab_how_it_works'],
+            deps: ['DrMigiRAGPipeline', 'MigiRetriever', 'MigiVectorStore', 'MigiEmbedder', 'Streamlit'],
+        },
+
+        // ─── Pipeline / Orchestrator ───
+        {
+            id: 'rag_pipeline', name: 'DrMigiRAGPipeline', type: 'pipeline', size: 42,
+            file: 'src/rag/pipeline.py',
+            description: 'The master RAG orchestrator. Combines retrieval (MigiRetriever) with LLM inference (DrMigiEngine). Retrieves relevant patient history → injects into prompt → generates grounded clinical response.',
+            methods: ['__init__()', 'ask(patient_id, question)', 'ask_stream(patient_id, question)', '_build_rag_system_prompt(context)'],
+            deps: ['DrMigiEngine', 'MigiRetriever', 'MigiEmbedder', 'MigiVectorStore', 'build_rag_messages()'],
+        },
+
+        // ─── Phase 1 — LLM Engine ───
+        {
+            id: 'engine', name: 'DrMigiEngine', type: 'engine', size: 36,
+            file: 'src/inference/engine.py',
+            description: 'The core LLM reasoning brain. Wraps the Qwen 2.5 model behind a clean interface with synchronous and streaming generation, chat template formatting, performance logging, and token metrics.',
+            methods: ['__init__()', 'generate_response(prompt, system_prompt)', 'generate_stream(prompt, system_prompt)'],
+            deps: ['load_model_and_tokenizer()', 'determine_optimal_device()', 'build_chat_messages()', 'TextIteratorStreamer'],
+        },
+
+        // ─── Model Loader ───
+        {
+            id: 'loader', name: 'ModelLoader', type: 'model', size: 30,
+            file: 'src/model/loader.py',
+            description: 'Loads the Qwen 2.5 model & tokenizer with auto device detection (CPU/CUDA), HuggingFace cache redirection, and optimal dtype selection (float32/float16/bfloat16).',
+            methods: ['determine_optimal_device()', 'load_model_and_tokenizer(model_name)'],
+            deps: ['inference_config.json', 'AutoModelForCausalLM', 'AutoTokenizer', 'logger', 'Timer'],
+        },
+
+        // ─── RAG Components ───
+        {
+            id: 'chunker', name: 'PatientRecordChunker', type: 'rag', size: 28,
+            file: 'src/rag/chunker.py',
+            description: 'Splits patient JSON records into visit-level text chunks. Each chunk is a complete clinical encounter (vitals, diagnosis, labs, notes) — preserving clinical coherence for accurate semantic retrieval.',
+            methods: ['chunk_patient(patient_data)', '_format_visit(header, visit)', 'chunk_from_file(filepath)'],
+            deps: ['Patient JSON files'],
+        },
+        {
+            id: 'embedder', name: 'MigiEmbedder', type: 'rag', size: 28,
+            file: 'src/rag/embedder.py',
+            description: 'Wraps BAAI/bge-small-en-v1.5 (130MB, 384-dim) to convert text into dense vector embeddings. Used at both ingestion time (chunks) and query time (doctor questions) to produce comparable vectors.',
+            methods: ['__init__()', 'embed_text(text)', 'embed_batch(texts)', 'embedding_dimension'],
+            deps: ['rag_config.json', 'SentenceTransformer'],
+        },
+        {
+            id: 'vector_store', name: 'MigiVectorStore', type: 'rag', size: 30,
+            file: 'src/rag/vector_store.py',
+            description: 'ChromaDB wrapper providing persistent vector storage and semantic similarity search. Supports adding chunks, cosine similarity search, patient-filtered retrieval, and full patient timeline queries.',
+            methods: ['__init__()', 'add_chunks(chunks)', 'search(query, top_k, patient_id)', 'get_patient_chunks(patient_id)', 'collection_count()'],
+            deps: ['MigiEmbedder', 'rag_config.json', 'ChromaDB'],
+        },
+        {
+            id: 'retriever', name: 'MigiRetriever', type: 'rag', size: 28,
+            file: 'src/rag/retriever.py',
+            description: 'Bridge between raw retrieval and prompt construction. Takes a query → retrieves top-k relevant visit chunks → formats them into a numbered, chronological context string ready for LLM injection.',
+            methods: ['__init__()', 'retrieve(query, patient_id)', 'retrieve_raw(query, patient_id)', 'retrieve_full_timeline(patient_id)'],
+            deps: ['MigiVectorStore', 'rag_config.json'],
+        },
+
+        // ─── Prompts ───
+        {
+            id: 'templates', name: 'Prompt Templates', type: 'prompt', size: 26,
+            file: 'src/prompts/templates.py',
+            description: 'Clinical persona definitions and message template generators. Defines the base DR. MIGI system prompt, the RAG-grounded prompt with context injection markers, and Qwen chat message builders.',
+            methods: ['build_chat_messages(user_content, system_prompt)', 'build_rag_messages(user_query, patient_context)'],
+            deps: ['DR_MIGI_SYSTEM_PROMPT', 'DR_MIGI_RAG_SYSTEM_PROMPT_TEMPLATE'],
+        },
+
+        // ─── Utils ───
+        {
+            id: 'logger', name: 'Logger & Timer', type: 'util', size: 22,
+            file: 'src/utils/logger.py',
+            description: 'Production-grade logging with RAM/VRAM monitoring (via psutil + torch.cuda) and a high-resolution Timer context manager for execution profiling.',
+            methods: ['get_memory_usage()', 'log_resource_state(stage)', 'Timer(description)'],
+            deps: ['psutil', 'torch', 'logging'],
+        },
+        {
+            id: 'converter', name: 'SafeTensors Converter', type: 'util', size: 18,
+            file: 'src/utils/convert_safetensors.py',
+            description: 'Converts Qwen model.safetensors to pytorch_model.bin for Windows environments where memory-mapped safetensors loading fails.',
+            methods: ['convert_safetensors_to_bin(snapshot_dir)'],
+            deps: ['torch', 'struct'],
+        },
+
+        // ─── Data / Config ───
+        {
+            id: 'inference_config', name: 'inference_config.json', type: 'data', size: 20,
+            file: 'configs/inference_config.json',
+            description: 'LLM configuration: model name (Qwen2.5-0.5B-Instruct), HF cache path, and default generation hyperparameters (temperature, top_p, top_k, max_new_tokens).',
+            methods: [],
+            deps: [],
+        },
+        {
+            id: 'rag_config', name: 'rag_config.json', type: 'data', size: 20,
+            file: 'configs/rag_config.json',
+            description: 'RAG configuration: embedding model, ChromaDB path, collection name, top-k retrieval count, minimum relevance score.',
+            methods: [],
+            deps: [],
+        },
+        {
+            id: 'patient_data', name: 'Patient Records', type: 'data', size: 26,
+            file: 'datasets/patients/*.json',
+            description: '3 synthetic patient JSON files: P001 (Diabetes trajectory), P002 (Cardiac trajectory), P003 (Pulmonary trajectory). Each contains demographics, chronic conditions, family history, and multi-year visit history.',
+            methods: ['P001_john_doe.json', 'P002_priya_sharma.json', 'P003_ramesh_iyer.json'],
+            deps: [],
+        },
+
+        // ─── Scripts ───
+        {
+            id: 'ingest', name: 'ingest_patients.py', type: 'script', size: 24,
+            file: 'scripts/ingest_patients.py',
+            description: 'One-time ingestion script. Scans patient JSON files → chunks by visit → embeds with BAAI/bge-small → stores in ChromaDB. Idempotent via upsert.',
+            methods: ['main()'],
+            deps: ['PatientRecordChunker', 'MigiEmbedder', 'MigiVectorStore'],
+        },
+
+        // ─── Notebooks ───
+        {
+            id: 'nb_inference', name: '01_cpu_inference.py', type: 'notebook', size: 20,
+            file: 'notebooks/01_cpu_inference.py',
+            description: 'Phase 1 walkthrough — direct LLM inference without RAG. Demonstrates model loading, synchronous & streaming generation.',
+            methods: [],
+            deps: ['DrMigiEngine'],
+        },
+        {
+            id: 'nb_tokens', name: '02_explain_tokens.py', type: 'notebook', size: 18,
+            file: 'notebooks/02_explain_tokens.py',
+            description: 'Deep-dive into Qwen tokenization: subword splits, BPE vocabulary (151,936 tokens), special tokens, and token ID mapping.',
+            methods: [],
+            deps: ['AutoTokenizer'],
+        },
+        {
+            id: 'nb_rag', name: '03_rag_demo.py', type: 'notebook', size: 22,
+            file: 'notebooks/03_rag_demo.py',
+            description: 'End-to-end RAG demo with all 3 patients. Shows retrieval, context injection, and grounded LLM clinical analysis.',
+            methods: [],
+            deps: ['DrMigiRAGPipeline'],
+        },
+
+        // ─── Tests ───
+        {
+            id: 'tests', name: 'test_inference.py', type: 'test', size: 22,
+            file: 'tests/test_inference.py',
+            description: 'Automated test suite for DrMigiEngine: validates model initialization, synchronous generation output structure, and streaming generation correctness.',
+            methods: ['test_engine_initialization()', 'test_synchronous_generation()', 'test_streaming_generation()'],
+            deps: ['DrMigiEngine'],
+        },
+
+        // ─── External Dependencies ───
+        {
+            id: 'ext_qwen', name: 'Qwen 2.5\n(0.5B-Instruct)', type: 'external', size: 24,
+            file: 'HuggingFace Hub',
+            description: 'Foundation LLM — Qwen2.5-0.5B-Instruct. Runs locally on CPU/GPU with no API required. Decoder-only transformer with 24 layers, GQA attention.',
+            methods: [], deps: [],
+        },
+        {
+            id: 'ext_bge', name: 'BAAI/bge-small\n(en-v1.5)', type: 'external', size: 22,
+            file: 'HuggingFace Hub',
+            description: 'Embedding model — 130MB, 384-dimensional output vectors. Apache 2.0 license. Top BEIR benchmark performer at its size class.',
+            methods: [], deps: [],
+        },
+        {
+            id: 'ext_chroma', name: 'ChromaDB', type: 'external', size: 22,
+            file: 'pip package',
+            description: 'Local vector database — on-disk, zero config, Apache 2.0. Supports metadata filtering and cosine similarity HNSW index.',
+            methods: [], deps: [],
+        },
+        {
+            id: 'ext_streamlit', name: 'Streamlit', type: 'external', size: 22,
+            file: 'pip package',
+            description: 'Web framework for the clinical intelligence dashboard. Provides caching, widgets, columns, tabs, and reactive reruns.',
+            methods: [], deps: [],
+        },
+    ];
+
+    const links = [
+        // App → Pipeline
+        { source: 'app', target: 'rag_pipeline', label: 'initializes & calls ask()' },
+        { source: 'app', target: 'ext_streamlit', label: 'UI framework' },
+
+        // Pipeline → Components
+        { source: 'rag_pipeline', target: 'engine', label: 'generate_response()' },
+        { source: 'rag_pipeline', target: 'retriever', label: 'retrieve(query)' },
+        { source: 'rag_pipeline', target: 'embedder', label: 'initializes' },
+        { source: 'rag_pipeline', target: 'vector_store', label: 'initializes' },
+        { source: 'rag_pipeline', target: 'templates', label: 'build_rag_messages()' },
+
+        // Engine → Dependencies
+        { source: 'engine', target: 'loader', label: 'load_model_and_tokenizer()' },
+        { source: 'engine', target: 'templates', label: 'build_chat_messages()' },
+        { source: 'engine', target: 'logger', label: 'logging & Timer' },
+
+        // Loader → Config / Externals
+        { source: 'loader', target: 'inference_config', label: 'reads config' },
+        { source: 'loader', target: 'ext_qwen', label: 'loads model weights' },
+        { source: 'loader', target: 'logger', label: 'log_resource_state()' },
+
+        // RAG chain
+        { source: 'retriever', target: 'vector_store', label: 'search()' },
+        { source: 'vector_store', target: 'embedder', label: 'embed_text/batch()' },
+        { source: 'vector_store', target: 'ext_chroma', label: 'PersistentClient' },
+        { source: 'embedder', target: 'ext_bge', label: 'SentenceTransformer' },
+        { source: 'embedder', target: 'rag_config', label: 'reads config' },
+        { source: 'vector_store', target: 'rag_config', label: 'reads config' },
+        { source: 'retriever', target: 'rag_config', label: 'reads config' },
+
+        // Ingestion
+        { source: 'ingest', target: 'chunker', label: 'chunk_from_file()' },
+        { source: 'ingest', target: 'embedder', label: 'initializes' },
+        { source: 'ingest', target: 'vector_store', label: 'add_chunks()' },
+        { source: 'chunker', target: 'patient_data', label: 'parses JSON' },
+
+        // Notebooks
+        { source: 'nb_inference', target: 'engine', label: 'uses' },
+        { source: 'nb_rag', target: 'rag_pipeline', label: 'uses' },
+
+        // Tests
+        { source: 'tests', target: 'engine', label: 'validates' },
+    ];
+
+    // ═══════════════════════════════════════════════════════════════
+    //  GRAPH RENDERING WITH D3.JS
+    // ═══════════════════════════════════════════════════════════════
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const svg = d3.select('#graph-canvas')
+        .attr('width', width)
+        .attr('height', height);
+
+    // Glow filter
+    const defs = svg.append('defs');
+    const filter = defs.append('filter').attr('id', 'glow');
+    filter.append('feGaussianBlur').attr('stdDeviation', '4').attr('result', 'coloredBlur');
+    const feMerge = filter.append('feMerge');
+    feMerge.append('feMergeNode').attr('in', 'coloredBlur');
+    feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+    // Arrow markers
+    defs.append('marker')
+        .attr('id', 'arrow')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 28)
+        .attr('refY', 0)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,-4L10,0L0,4')
+        .attr('fill', '#334155');
+
+    const g = svg.append('g');
+
+    // Zoom
+    const zoom = d3.zoom()
+        .scaleExtent([0.15, 4])
+        .on('zoom', (e) => g.attr('transform', e.transform));
+    svg.call(zoom);
+
+    // Force simulation
+    const simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id).distance(180).strength(0.4))
+        .force('charge', d3.forceManyBody().strength(-800))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide().radius(d => d.size + 20))
+        .force('x', d3.forceX(width / 2).strength(0.04))
+        .force('y', d3.forceY(height / 2).strength(0.04));
+
+    // Links
+    const linkElements = g.append('g')
+        .selectAll('line')
+        .data(links)
+        .enter()
+        .append('line')
+        .attr('class', 'link')
+        .attr('stroke', d => {
+            const sourceNode = nodes.find(n => n.id === (typeof d.source === 'string' ? d.source : d.source.id));
+            return sourceNode ? NODE_TYPES[sourceNode.type].color : '#334155';
+        })
+        .attr('stroke-width', 1.5)
+        .attr('marker-end', 'url(#arrow)');
+
+    // Node groups
+    const nodeElements = g.append('g')
+        .selectAll('g')
+        .data(nodes)
+        .enter()
+        .append('g')
+        .attr('class', 'node-group')
+        .call(d3.drag()
+            .on('start', dragStart)
+            .on('drag', dragging)
+            .on('end', dragEnd)
+        );
+
+    // Outer glow ring
+    nodeElements.append('circle')
+        .attr('r', d => d.size + 8)
+        .attr('fill', 'none')
+        .attr('stroke', d => NODE_TYPES[d.type].color)
+        .attr('stroke-width', 1)
+        .attr('opacity', 0.15)
+        .attr('class', 'pulse-ring');
+
+    // Main node circle
+    nodeElements.append('circle')
+        .attr('class', 'node-circle glow-filter')
+        .attr('r', d => d.size)
+        .attr('fill', d => {
+            const c = NODE_TYPES[d.type].color;
+            return c + '18';  // very transparent fill
+        })
+        .attr('stroke', d => NODE_TYPES[d.type].color)
+        .attr('stroke-width', 2);
+
+    // Inner dot
+    nodeElements.append('circle')
+        .attr('r', 4)
+        .attr('fill', d => NODE_TYPES[d.type].color)
+        .attr('opacity', 0.8);
+
+    // Labels
+    nodeElements.append('text')
+        .attr('class', 'node-label')
+        .attr('dy', d => d.size + 16)
+        .attr('font-size', d => Math.max(10, d.size / 3.2))
+        .text(d => d.name.split('\n')[0]);
+
+    // Sub-labels (for multi-line names)
+    nodeElements.filter(d => d.name.includes('\n'))
+        .append('text')
+        .attr('class', 'node-sublabel')
+        .attr('dy', d => d.size + 28)
+        .text(d => d.name.split('\n')[1]);
+
+    // File sub-label for single-line names
+    nodeElements.filter(d => !d.name.includes('\n') && d.file)
+        .append('text')
+        .attr('class', 'node-sublabel')
+        .attr('dy', d => d.size + 28)
+        .text(d => d.file.length > 30 ? '...' + d.file.slice(-28) : d.file);
+
+    // ─── Interactions ───
+    const tooltip = d3.select('#tooltip');
+
+    nodeElements
+        .on('mouseover', function(event, d) {
+            const typeInfo = NODE_TYPES[d.type];
+
+            d3.select('#tt-type').text(typeInfo.label).style('color', typeInfo.color);
+            d3.select('#tt-name').text(d.name.replace('\n', ' '));
+            d3.select('#tt-desc').text(d.description.slice(0, 140) + (d.description.length > 140 ? '…' : ''));
+
+            tooltip
+                .style('left', (event.clientX + 16) + 'px')
+                .style('top', (event.clientY - 10) + 'px')
+                .classed('visible', true);
+
+            // Highlight connected links
+            linkElements
+                .attr('stroke-opacity', l =>
+                    (l.source.id === d.id || l.target.id === d.id) ? 0.8 : 0.06
+                )
+                .attr('stroke-width', l =>
+                    (l.source.id === d.id || l.target.id === d.id) ? 2.5 : 1
+                );
+
+            // Dim other nodes
+            nodeElements.select('.node-circle')
+                .attr('opacity', n => {
+                    if (n.id === d.id) return 1;
+                    const connected = links.some(l =>
+                        (l.source.id === d.id && l.target.id === n.id) ||
+                        (l.target.id === d.id && l.source.id === n.id)
+                    );
+                    return connected ? 1 : 0.2;
+                });
+        })
+        .on('mousemove', function(event) {
+            tooltip
+                .style('left', (event.clientX + 16) + 'px')
+                .style('top', (event.clientY - 10) + 'px');
+        })
+        .on('mouseout', function() {
+            tooltip.classed('visible', false);
+            linkElements.attr('stroke-opacity', 0.2).attr('stroke-width', 1.5);
+            nodeElements.select('.node-circle').attr('opacity', 1);
+        })
+        .on('click', function(event, d) {
+            event.stopPropagation();
+            openDetailPanel(d);
+        });
+
+    // ─── Detail Panel ───
+    function openDetailPanel(d) {
+        const panel = document.getElementById('detail-panel');
+        const content = document.getElementById('detail-content');
+        const typeInfo = NODE_TYPES[d.type];
+
+        let html = `
+            <div class="detail-type-badge" style="background:${typeInfo.color}22; color:${typeInfo.color}; border:1px solid ${typeInfo.color}44;">
+                ${typeInfo.icon} ${typeInfo.label}
+            </div>
+            <div class="detail-name">${d.name.replace('\n', ' ')}</div>
+            <div class="detail-file">${d.file}</div>
+
+            <div class="detail-section">
+                <h3>Description</h3>
+                <p>${d.description}</p>
+            </div>
+        `;
+
+        if (d.methods && d.methods.length > 0) {
+            html += `<div class="detail-section"><h3>${d.type === 'data' ? 'Files' : 'Methods / API'}</h3><ul class="detail-methods">`;
+            d.methods.forEach(m => { html += `<li>${m}</li>`; });
+            html += `</ul></div>`;
+        }
+
+        // Outgoing dependencies
+        const outgoing = links.filter(l => l.source.id === d.id);
+        if (outgoing.length > 0) {
+            html += `<div class="detail-section"><h3>Depends On (→)</h3><div class="detail-deps">`;
+            outgoing.forEach(l => {
+                const target = nodes.find(n => n.id === l.target.id);
+                const tc = NODE_TYPES[target.type].color;
+                html += `<span class="detail-dep-chip" style="border-color:${tc}44; color:${tc}">${target.name.replace('\n', ' ')}</span>`;
+            });
+            html += `</div></div>`;
+        }
+
+        // Incoming dependencies
+        const incoming = links.filter(l => l.target.id === d.id);
+        if (incoming.length > 0) {
+            html += `<div class="detail-section"><h3>Used By (←)</h3><div class="detail-deps">`;
+            incoming.forEach(l => {
+                const source = nodes.find(n => n.id === l.source.id);
+                const sc = NODE_TYPES[source.type].color;
+                html += `<span class="detail-dep-chip" style="border-color:${sc}44; color:${sc}">${source.name.replace('\n', ' ')}</span>`;
+            });
+            html += `</div></div>`;
+        }
+
+        content.innerHTML = html;
+        panel.classList.add('open');
+    }
+
+    document.getElementById('close-panel').addEventListener('click', () => {
+        document.getElementById('detail-panel').classList.remove('open');
+    });
+
+    svg.on('click', () => {
+        document.getElementById('detail-panel').classList.remove('open');
+    });
+
+    // ─── Legend ───
+    const legendContainer = document.getElementById('legend');
+    const activeTypes = new Set(Object.keys(NODE_TYPES));
+
+    Object.entries(NODE_TYPES).forEach(([key, info]) => {
+        const count = nodes.filter(n => n.type === key).length;
+        if (count === 0) return;
+
+        const chip = document.createElement('div');
+        chip.className = 'legend-chip active';
+        chip.innerHTML = `<span class="legend-dot" style="background:${info.color}"></span>${info.label} (${count})`;
+        chip.addEventListener('click', () => {
+            if (activeTypes.has(key)) {
+                activeTypes.delete(key);
+                chip.classList.remove('active');
+                chip.style.opacity = '0.35';
+            } else {
+                activeTypes.add(key);
+                chip.classList.add('active');
+                chip.style.opacity = '1';
+            }
+            filterGraph();
+        });
+        legendContainer.appendChild(chip);
+    });
+
+    function filterGraph() {
+        nodeElements.attr('display', d => activeTypes.has(d.type) ? null : 'none');
+        linkElements.attr('display', d => {
+            const src = typeof d.source === 'string' ? d.source : d.source.id;
+            const tgt = typeof d.target === 'string' ? d.target : d.target.id;
+            const srcNode = nodes.find(n => n.id === src);
+            const tgtNode = nodes.find(n => n.id === tgt);
+            return (srcNode && tgtNode && activeTypes.has(srcNode.type) && activeTypes.has(tgtNode.type)) ? null : 'none';
+        });
+    }
+
+    // ─── Stats ───
+    document.getElementById('stat-nodes').textContent = nodes.length;
+    document.getElementById('stat-edges').textContent = links.length;
+    document.getElementById('stat-modules').textContent = new Set(nodes.map(n => n.type)).size;
+
+    // ─── Zoom Controls ───
+    document.getElementById('zoom-in').addEventListener('click', () => svg.transition().call(zoom.scaleBy, 1.3));
+    document.getElementById('zoom-out').addEventListener('click', () => svg.transition().call(zoom.scaleBy, 0.7));
+    document.getElementById('zoom-fit').addEventListener('click', () => {
+        svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity
+            .translate(width / 2, height / 2)
+            .scale(0.7)
+            .translate(-width / 2, -height / 2));
+    });
+
+    // ─── Drag handlers ───
+    function dragStart(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x; d.fy = d.y;
+    }
+    function dragging(event, d) {
+        d.fx = event.x; d.fy = event.y;
+    }
+    function dragEnd(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null; d.fy = null;
+    }
+
+    // ─── Tick ───
+    simulation.on('tick', () => {
+        linkElements
+            .attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y);
+
+        nodeElements.attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+
+    // ─── Remove loading screen ───
+    setTimeout(() => {
+        document.getElementById('loading').classList.add('hidden');
+    }, 1200);
+
+    // ─── Resize ───
+    window.addEventListener('resize', () => {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        svg.attr('width', w).attr('height', h);
+        simulation.force('center', d3.forceCenter(w / 2, h / 2));
+        simulation.alpha(0.3).restart();
+    });
+    </script>
+</body>
+</html>

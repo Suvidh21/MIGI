@@ -1,0 +1,121 @@
+{
+  "patient_id": "P003",
+  "name": "Ramesh Iyer",
+  "age": 63,
+  "gender": "Male",
+  "blood_group": "A+",
+  "chronic_conditions": ["COPD (moderate severity, diagnosed 2017)", "Type 2 Diabetes Mellitus (diagnosed 2015)"],
+  "family_history": ["Lung cancer (brother)", "COPD (father)"],
+  "visits": [
+    {
+      "visit_id": "V001",
+      "date": "2019-03-10",
+      "chief_complaint": "Worsening breathlessness on mild exertion, chronic productive cough",
+      "vitals": {
+        "blood_pressure": "132/84",
+        "heart_rate": 88,
+        "blood_sugar_fasting_mgdl": 138,
+        "weight_kg": 61.0,
+        "bmi": 22.8,
+        "temperature_celsius": 36.8,
+        "spo2_percent": 93,
+        "peak_flow_L_min": 210
+      },
+      "diagnosis": "COPD — moderate exacerbation. T2DM poorly controlled.",
+      "medications": ["Tiotropium inhaler 18mcg OD", "Salbutamol PRN", "Metformin 1000mg BD", "Prednisolone 30mg 5-day course"],
+      "lab_results": {
+        "HbA1c_percent": 8.1,
+        "FEV1_percent_predicted": 54,
+        "FVC_L": 2.8,
+        "FEV1_FVC_ratio": 0.58,
+        "ABG_pH": 7.38,
+        "ABG_PaO2_mmHg": 68,
+        "ABG_PaCO2_mmHg": 44
+      },
+      "doctor_notes": "SpO2 93% at rest is concerning. FEV1 54% predicted — moderate COPD. HbA1c poorly controlled. Steroid course for exacerbation will worsen glucose control — monitor closely. Pulmonology referral."
+    },
+    {
+      "visit_id": "V002",
+      "date": "2020-07-22",
+      "chief_complaint": "Acute breathlessness, fever, purulent sputum",
+      "vitals": {
+        "blood_pressure": "128/80",
+        "heart_rate": 96,
+        "blood_sugar_fasting_mgdl": 162,
+        "weight_kg": 59.5,
+        "bmi": 22.2,
+        "temperature_celsius": 38.4,
+        "spo2_percent": 88,
+        "peak_flow_L_min": 155
+      },
+      "diagnosis": "Acute COPD exacerbation secondary to bacterial infection. Hyperglycaemia secondary to infection and steroids.",
+      "medications": ["Amoxicillin-Clavulanate 625mg TDS", "IV Methylprednisolone", "IV Insulin sliding scale", "NIV (BiPAP) initiated"],
+      "lab_results": {
+        "HbA1c_percent": 8.8,
+        "WBC_count": 14200,
+        "CRP_mg_L": 88,
+        "FEV1_percent_predicted": 44,
+        "ABG_pH": 7.32,
+        "ABG_PaO2_mmHg": 58,
+        "ABG_PaCO2_mmHg": 52,
+        "sputum_culture": "Haemophilus influenzae — sensitive to Amoxicillin"
+      },
+      "doctor_notes": "SpO2 dropped to 88%. Type 2 respiratory failure developing — PaCO2 rising to 52. BiPAP initiated. Lung function deteriorating rapidly. This is the second severe exacerbation in 18 months. Weight loss of 1.5kg noted. Long-term oxygen therapy to be discussed."
+    },
+    {
+      "visit_id": "V003",
+      "date": "2022-01-08",
+      "chief_complaint": "Routine pulmonology follow-up, persistent dyspnoea at rest",
+      "vitals": {
+        "blood_pressure": "120/76",
+        "heart_rate": 94,
+        "blood_sugar_fasting_mgdl": 148,
+        "weight_kg": 57.0,
+        "bmi": 21.3,
+        "temperature_celsius": 36.5,
+        "spo2_percent": 90,
+        "peak_flow_L_min": 138
+      },
+      "diagnosis": "COPD — severe stage. Cor pulmonale suspected. T2DM moderately controlled.",
+      "medications": ["Long-term oxygen therapy (LTOT) 2L/min initiated", "Tiotropium", "Salmeterol/Fluticasone inhaler", "Metformin 500mg BD (reduced due to hypoxia risk)", "Furosemide 40mg OD"],
+      "lab_results": {
+        "HbA1c_percent": 7.6,
+        "FEV1_percent_predicted": 36,
+        "Echo": "RV dilatation. Pulmonary artery pressure 42mmHg — mild pulmonary hypertension",
+        "ABG_pH": 7.36,
+        "ABG_PaO2_mmHg": 55,
+        "ABG_PaCO2_mmHg": 51,
+        "NT_proBNP_pg_mL": 620
+      },
+      "doctor_notes": "FEV1 now 36% — severe COPD. Echo confirms early cor pulmonale with pulmonary hypertension. SpO2 90% at rest on room air — LTOT started. Weight loss continuing (4kg over 3 years). Metformin dose reduced due to hypoxia-associated lactic acidosis risk. Prognosis guarded."
+    },
+    {
+      "visit_id": "V004",
+      "date": "2023-09-30",
+      "chief_complaint": "Emergency admission — severe breathlessness, confusion, cyanosis",
+      "vitals": {
+        "blood_pressure": "108/68",
+        "heart_rate": 112,
+        "blood_sugar_fasting_mgdl": 188,
+        "weight_kg": 54.5,
+        "bmi": 20.3,
+        "temperature_celsius": 37.8,
+        "spo2_percent": 82,
+        "peak_flow_L_min": 90
+      },
+      "diagnosis": "Hypercapnic respiratory failure. Severe COPD exacerbation. Hyperglycaemia. Decompensated cor pulmonale.",
+      "medications": ["Invasive mechanical ventilation initiated (intubated)", "IV broad-spectrum antibiotics", "IV insulin", "IV diuretics", "ICU admission"],
+      "lab_results": {
+        "HbA1c_percent": 9.2,
+        "ABG_pH": 7.22,
+        "ABG_PaO2_mmHg": 44,
+        "ABG_PaCO2_mmHg": 72,
+        "Lactate_mmol_L": 3.8,
+        "NT_proBNP_pg_mL": 2840,
+        "WBC_count": 18600,
+        "CRP_mg_L": 142
+      },
+      "doctor_notes": "Critical admission. PaCO2 72 with pH 7.22 — severe hypercapnic respiratory failure. Intubated and mechanically ventilated. The 4-year pattern of deteriorating FEV1, rising PaCO2, weight loss, and recurrent exacerbations was prognostically significant. NT-proBNP 2840 — severe cor pulmonale decompensation. ICU care. Family counselled on prognosis."
+    }
+  ]
+}

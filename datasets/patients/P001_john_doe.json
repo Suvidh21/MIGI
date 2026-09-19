@@ -1,0 +1,107 @@
+{
+  "patient_id": "P001",
+  "name": "John Doe",
+  "age": 52,
+  "gender": "Male",
+  "blood_group": "B+",
+  "chronic_conditions": [],
+  "family_history": ["Type 2 Diabetes (father)", "Hypertension (mother)"],
+  "visits": [
+    {
+      "visit_id": "V001",
+      "date": "2020-01-15",
+      "chief_complaint": "Routine annual checkup",
+      "vitals": {
+        "blood_pressure": "118/78",
+        "heart_rate": 72,
+        "blood_sugar_fasting_mgdl": 98,
+        "weight_kg": 74.0,
+        "bmi": 24.1,
+        "temperature_celsius": 36.7,
+        "spo2_percent": 98
+      },
+      "diagnosis": "Healthy. No active concerns identified.",
+      "medications": [],
+      "lab_results": {
+        "HbA1c_percent": 5.4,
+        "LDL_cholesterol_mgdl": 112,
+        "HDL_cholesterol_mgdl": 48,
+        "triglycerides_mgdl": 145,
+        "creatinine_mgdl": 0.9
+      },
+      "doctor_notes": "Patient in good health. Advised to maintain current diet and exercise. Family history of diabetes noted — monitor blood sugar annually."
+    },
+    {
+      "visit_id": "V002",
+      "date": "2021-06-10",
+      "chief_complaint": "Mild fatigue and occasional thirst",
+      "vitals": {
+        "blood_pressure": "126/82",
+        "heart_rate": 76,
+        "blood_sugar_fasting_mgdl": 108,
+        "weight_kg": 77.5,
+        "bmi": 25.3,
+        "temperature_celsius": 36.8,
+        "spo2_percent": 98
+      },
+      "diagnosis": "Impaired fasting glucose (pre-diabetic range). Early hypertension borderline.",
+      "medications": ["Lifestyle modification advised"],
+      "lab_results": {
+        "HbA1c_percent": 5.9,
+        "LDL_cholesterol_mgdl": 128,
+        "HDL_cholesterol_mgdl": 44,
+        "triglycerides_mgdl": 178,
+        "creatinine_mgdl": 1.0
+      },
+      "doctor_notes": "Blood sugar rising. Patient has gained 3.5kg since last visit. Fatigue and thirst consistent with early glucose dysregulation. Dietary counselling initiated. Repeat HbA1c in 6 months."
+    },
+    {
+      "visit_id": "V003",
+      "date": "2022-03-22",
+      "chief_complaint": "Weight gain, increased fatigue, mild headaches",
+      "vitals": {
+        "blood_pressure": "133/86",
+        "heart_rate": 80,
+        "blood_sugar_fasting_mgdl": 118,
+        "weight_kg": 80.2,
+        "bmi": 26.2,
+        "temperature_celsius": 36.9,
+        "spo2_percent": 97
+      },
+      "diagnosis": "Pre-diabetes confirmed. Stage 1 hypertension.",
+      "medications": ["Metformin 500mg OD (initiated)", "Low-sodium diet plan"],
+      "lab_results": {
+        "HbA1c_percent": 6.2,
+        "LDL_cholesterol_mgdl": 138,
+        "HDL_cholesterol_mgdl": 41,
+        "triglycerides_mgdl": 198,
+        "creatinine_mgdl": 1.1
+      },
+      "doctor_notes": "HbA1c now 6.2% — formally pre-diabetic. Blood pressure trending upward. LDL elevated. Patient started on low-dose Metformin. Dietary and lifestyle intervention reinforced. Referral to dietitian."
+    },
+    {
+      "visit_id": "V004",
+      "date": "2023-11-05",
+      "chief_complaint": "Routine follow-up, blurred vision episodes, nocturia",
+      "vitals": {
+        "blood_pressure": "139/89",
+        "heart_rate": 82,
+        "blood_sugar_fasting_mgdl": 131,
+        "weight_kg": 82.0,
+        "bmi": 26.8,
+        "temperature_celsius": 37.0,
+        "spo2_percent": 97
+      },
+      "diagnosis": "Type 2 Diabetes Mellitus — newly confirmed. Hypertension Stage 1 persistent.",
+      "medications": ["Metformin 1000mg BD", "Amlodipine 5mg OD (initiated for BP)"],
+      "lab_results": {
+        "HbA1c_percent": 7.1,
+        "LDL_cholesterol_mgdl": 149,
+        "HDL_cholesterol_mgdl": 38,
+        "triglycerides_mgdl": 224,
+        "creatinine_mgdl": 1.2
+      },
+      "doctor_notes": "HbA1c 7.1% confirms Type 2 DM. Blurred vision and nocturia consistent with hyperglycaemia. Metformin dose increased. Antihypertensive initiated. Ophthalmology referral for early retinopathy screening. Nephrology watch given rising creatinine trend."
+    }
+  ]
+}

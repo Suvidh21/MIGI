@@ -1,0 +1,30 @@
+# PyTorch - Core Deep Learning Framework
+torch
+
+# Hugging Face Transformers - The standard library for loading LLMs
+transformers
+
+# Accelerate - Helps with memory management and device placement
+accelerate
+
+# Required for Qwen's specific tokenizer
+sentencepiece
+tiktoken
+
+# Utility libraries
+tqdm
+psutil
+
+# =======================================================================
+# Phase 2 — RAG Pipeline Dependencies
+# =======================================================================
+
+# Sentence Transformers - Local embedding model (BAAI/bge-small-en-v1.5)
+# Converts text into 384-dimensional semantic vectors for similarity search
+sentence-transformers
+
+# ChromaDB - Local vector database for storing and searching embeddings
+chromadb
+
+# Streamlit - Web application framework for interactive UI
+streamlit

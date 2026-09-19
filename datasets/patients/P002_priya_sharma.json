@@ -1,0 +1,113 @@
+{
+  "patient_id": "P002",
+  "name": "Priya Sharma",
+  "age": 45,
+  "gender": "Female",
+  "blood_group": "O+",
+  "chronic_conditions": ["Hypothyroidism (diagnosed 2018)"],
+  "family_history": ["Coronary Artery Disease (father, fatal MI at 58)", "Stroke (maternal aunt)"],
+  "visits": [
+    {
+      "visit_id": "V001",
+      "date": "2019-08-20",
+      "chief_complaint": "Fatigue, weight gain despite dieting, cold intolerance",
+      "vitals": {
+        "blood_pressure": "122/80",
+        "heart_rate": 64,
+        "blood_sugar_fasting_mgdl": 92,
+        "weight_kg": 68.0,
+        "bmi": 26.6,
+        "temperature_celsius": 36.4,
+        "spo2_percent": 99
+      },
+      "diagnosis": "Hypothyroidism — newly diagnosed.",
+      "medications": ["Levothyroxine 50mcg OD"],
+      "lab_results": {
+        "TSH_mIU_L": 8.9,
+        "Free_T4_ngdl": 0.7,
+        "total_cholesterol_mgdl": 218,
+        "LDL_cholesterol_mgdl": 142,
+        "HDL_cholesterol_mgdl": 52,
+        "triglycerides_mgdl": 160
+      },
+      "doctor_notes": "TSH significantly elevated. Cholesterol profile unfavourable — likely secondary to hypothyroidism. Levothyroxine initiated. Repeat TFTs in 6 weeks. Dietary advice given."
+    },
+    {
+      "visit_id": "V002",
+      "date": "2020-09-14",
+      "chief_complaint": "Palpitations, occasional chest tightness on exertion",
+      "vitals": {
+        "blood_pressure": "128/84",
+        "heart_rate": 88,
+        "blood_sugar_fasting_mgdl": 96,
+        "weight_kg": 70.5,
+        "bmi": 27.5,
+        "temperature_celsius": 36.6,
+        "spo2_percent": 98
+      },
+      "diagnosis": "Borderline hypertension. Palpitations — likely stress-related, no arrhythmia on ECG.",
+      "medications": ["Levothyroxine 75mcg OD (dose adjusted)", "Lifestyle modification"],
+      "lab_results": {
+        "TSH_mIU_L": 3.2,
+        "Free_T4_ngdl": 1.1,
+        "total_cholesterol_mgdl": 224,
+        "LDL_cholesterol_mgdl": 150,
+        "HDL_cholesterol_mgdl": 49,
+        "triglycerides_mgdl": 175,
+        "ECG": "Normal sinus rhythm. No ST changes."
+      },
+      "doctor_notes": "Thyroid now controlled. Cholesterol remains high — may need statin if lifestyle measures fail. Blood pressure creeping up. Palpitations attributed to stress and caffeine. Advised reduction in caffeine. Stress ECG within normal limits."
+    },
+    {
+      "visit_id": "V003",
+      "date": "2021-11-03",
+      "chief_complaint": "Chest tightness during stair climbing, shortness of breath",
+      "vitals": {
+        "blood_pressure": "136/88",
+        "heart_rate": 92,
+        "blood_sugar_fasting_mgdl": 102,
+        "weight_kg": 72.0,
+        "bmi": 28.1,
+        "temperature_celsius": 36.7,
+        "spo2_percent": 97
+      },
+      "diagnosis": "Suspected exertional angina. Hypertension Stage 1. Dyslipidaemia.",
+      "medications": ["Levothyroxine 75mcg OD", "Atorvastatin 20mg OD (initiated)", "Aspirin 75mg OD (initiated)"],
+      "lab_results": {
+        "TSH_mIU_L": 2.8,
+        "total_cholesterol_mgdl": 238,
+        "LDL_cholesterol_mgdl": 162,
+        "HDL_cholesterol_mgdl": 46,
+        "triglycerides_mgdl": 198,
+        "Troponin_I_ng_mL": 0.01,
+        "ECG": "T-wave flattening in lateral leads. No acute ST elevation."
+      },
+      "doctor_notes": "Exertional chest tightness is concerning given family history of CAD. ECG shows non-specific T-wave changes. Troponin negative — no acute event. Statin and aspirin initiated. Cardiology referral for stress echocardiogram. High cardiovascular risk profile."
+    },
+    {
+      "visit_id": "V004",
+      "date": "2023-04-18",
+      "chief_complaint": "Emergency: sudden severe chest pain radiating to left arm",
+      "vitals": {
+        "blood_pressure": "158/96",
+        "heart_rate": 102,
+        "blood_sugar_fasting_mgdl": 114,
+        "weight_kg": 73.0,
+        "bmi": 28.5,
+        "temperature_celsius": 37.2,
+        "spo2_percent": 95
+      },
+      "diagnosis": "NSTEMI — Non-ST Elevation Myocardial Infarction. Hypertension uncontrolled.",
+      "medications": ["Aspirin 300mg loading", "Clopidogrel 600mg loading", "Heparin IV", "Atorvastatin 80mg OD", "Bisoprolol 2.5mg OD", "Ramipril 5mg OD"],
+      "lab_results": {
+        "Troponin_I_ng_mL": 4.8,
+        "CK_MB_U_L": 42,
+        "total_cholesterol_mgdl": 252,
+        "LDL_cholesterol_mgdl": 172,
+        "ECG": "ST depression in V4-V6. T-wave inversion in lateral leads.",
+        "Echo": "EF 48%. Mild hypokinesia in lateral wall."
+      },
+      "doctor_notes": "NSTEMI confirmed. Troponin significantly elevated. Urgent cardiology intervention. Coronary angiogram planned. The 4-year trajectory — rising BP, LDL, exertional symptoms, T-wave changes — was predictive of this event. Dual antiplatelet therapy initiated. ICU observation post-intervention."
+    }
+  ]
+}
