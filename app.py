@@ -193,18 +193,19 @@ st.markdown("""
 
 
 # -----------------------------------------------------------------------------
-# Cached Model & Pipeline Loaders
+# Cached Model & Pipeline Loaders (Shared Memory Singleton)
 # -----------------------------------------------------------------------------
 @st.cache_resource(show_spinner="Loading DR. MIGI Brain (Qwen 2.5)...")
 def get_inference_engine():
-    """Loads the core standalone LLM engine for direct chat."""
+    """Loads the core standalone LLM engine once into memory."""
     return DrMigiEngine()
 
 
-@st.cache_resource(show_spinner="Loading DR. MIGI RAG Pipeline (Qwen 2.5 + ChromaDB)...")
+@st.cache_resource(show_spinner="Loading DR. MIGI RAG Pipeline...")
 def get_rag_pipeline():
-    """Loads the full RAG pipeline for grounded patient analysis."""
-    return DrMigiRAGPipeline(config_path="configs/rag_config.json")
+    """Loads the RAG components reusing the existing LLM engine to prevent duplicate RAM usage."""
+    shared_engine = get_inference_engine()
+    return DrMigiRAGPipeline(config_path="configs/rag_config.json", engine=shared_engine)
 
 
 # -----------------------------------------------------------------------------

@@ -34,7 +34,8 @@ class DrMigiRAGPipeline:
     def __init__(
         self,
         config_path: str = "configs/rag_config.json",
-        model_name: str | None = None
+        model_name: str | None = None,
+        engine: DrMigiEngine | None = None
     ):
         """
         Initialises the full pipeline: embedder, vector store, retriever, and LLM engine.
@@ -42,14 +43,19 @@ class DrMigiRAGPipeline:
         Arguments:
             config_path: Path to rag_config.json.
             model_name: Optional override for the LLM model (defaults to config).
+            engine: Optional pre-loaded DrMigiEngine instance to share memory.
         """
         print("=" * 60)
         print("Initialising DR. MIGI RAG Pipeline...")
         print("=" * 60)
 
-        # Phase 1 — LLM inference engine (unchanged)
-        print("\n[1/3] Loading LLM inference engine (Qwen 2.5)...")
-        self.engine = DrMigiEngine(model_name=model_name)
+        # Phase 1 — LLM inference engine (reused or loaded once)
+        if engine is not None:
+            print("\n[1/3] Reusing shared LLM inference engine...")
+            self.engine = engine
+        else:
+            print("\n[1/3] Loading LLM inference engine (Qwen 2.5)...")
+            self.engine = DrMigiEngine(model_name=model_name)
 
         # Phase 2 — Embedding model
         print("\n[2/3] Loading embedding model (BAAI/bge-small-en-v1.5)...")

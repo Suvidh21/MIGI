@@ -111,6 +111,7 @@ def load_model_and_tokenizer(model_name: str | None = None) -> tuple[AutoModelFo
             model_name,
             torch_dtype=dtype,
             device_map=device_map,
+            low_cpu_mem_usage=True,
             trust_remote_code=True,
             cache_dir=config["cache_dir"]
         )
