@@ -15,6 +15,8 @@ CONFIG_PATH = os.path.join(
     "inference_config.json"
 )
 
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 try:
     with open(CONFIG_PATH, "r") as f:
         config = json.load(f)
@@ -23,21 +25,18 @@ except Exception as e:
     # Production-ready fallback configuration
     config = {
         "model_name": "Qwen/Qwen2.5-0.5B-Instruct",
-        "cache_dir": "I:/suvidh/MIGI-main/models/cache",
+        "cache_dir": "./models/cache",
         "default_generation_params": {}
     }
 
-# =======================================================================
-# HUGGING FACE PATH REDIRECTION
-# =======================================================================
-# What it does: Redirects all model downloads to the specified cache directory.
-# Why it is needed:
-#   CRITICAL: The current execution system has very limited storage on C: drive.
-#   Directing cache to D: drive prevents disk exhaustion errors during downloads.
-# What happens if it is removed:
-#   Hugging Face will download to default path `~/.cache/huggingface`, which is on
-#   the C: drive. This will fill up C: drive, causing downloads and OS processes to crash.
-os.environ["HF_HOME"] = config["cache_dir"]
+raw_cache = config.get("cache_dir", "./models/cache")
+if not os.path.isabs(raw_cache):
+    resolved_cache = os.path.normpath(os.path.join(PROJECT_ROOT, raw_cache))
+else:
+    resolved_cache = raw_cache
+
+config["cache_dir"] = resolved_cache
+os.environ["HF_HOME"] = resolved_cache
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
 def determine_optimal_device() -> tuple[str, torch.dtype]:

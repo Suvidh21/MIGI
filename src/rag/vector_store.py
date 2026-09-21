@@ -1,43 +1,19 @@
+import os
 import json
 import chromadb
 from chromadb.config import Settings
 from src.rag.embedder import MigiEmbedder
+from src.rag.chunker import PatientRecordChunker
 
 
 class MigiVectorStore:
     """
     ChromaDB vector database wrapper for the DR. MIGI RAG pipeline.
-
-    What it does:
-        Provides a clean interface over ChromaDB to store, manage, and search
-        patient record embeddings. Supports adding chunks, semantic similarity
-        search, and patient-specific filtered retrieval.
-
-    Why ChromaDB:
-        - Runs fully locally with zero configuration
-        - Persists data to disk between sessions
-        - Supports metadata filtering (e.g., search only within one patient's records)
-        - Apache 2.0 licence — free for any use
-        - Simple Python API with no server required
-
-    Why it is needed:
-        After embedding patient visit chunks, those vectors must be stored somewhere
-        that supports fast approximate nearest-neighbour search. ChromaDB handles this
-        efficiently, retrieving the most semantically similar chunks to a query vector
-        in milliseconds — even across thousands of stored documents.
-
-    Best practices:
-        Use persistent storage (not in-memory) so the database survives restarts.
-        Store metadata alongside vectors to enable filtered retrieval per patient.
     """
 
     def __init__(self, embedder: MigiEmbedder, config_path: str = "configs/rag_config.json"):
         """
         Initialises the ChromaDB client and retrieves or creates the patient collection.
-
-        Arguments:
-            embedder: An initialised MigiEmbedder instance.
-            config_path: Path to rag_config.json.
         """
         with open(config_path, "r") as f:
             config = json.load(f)
@@ -45,7 +21,6 @@ class MigiVectorStore:
         db_path = config.get("vector_db_path", "./outputs/chroma_db")
         collection_name = config.get("collection_name", "migi_patients")
 
-        # Persistent client: stores data on disk so ingestion only needs to run once
         self.client = chromadb.PersistentClient(
             path=db_path,
             settings=Settings(anonymized_telemetry=False)
@@ -54,13 +29,42 @@ class MigiVectorStore:
         self.embedder = embedder
         self.collection_name = collection_name
 
-        # get_or_create_collection: safe to call multiple times — won't duplicate
         self.collection = self.client.get_or_create_collection(
             name=collection_name,
-            metadata={"hnsw:space": "cosine"}  # cosine similarity — best for bge models
+            metadata={"hnsw:space": "cosine"}
         )
 
+        if self.collection.count() == 0:
+            self._auto_ingest_default_patients()
+
         print(f"VectorStore ready. Collection: '{collection_name}' | Documents: {self.collection.count()}")
+
+    def _auto_ingest_default_patients(self):
+        """Auto-ingests patient JSON files from datasets/patients if collection is empty."""
+        patients_dir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            "datasets",
+            "patients"
+        )
+        if not os.path.exists(patients_dir):
+            return
+
+        patient_files = [
+            os.path.join(patients_dir, f)
+            for f in os.listdir(patients_dir)
+            if f.endswith(".json")
+        ]
+        if not patient_files:
+            return
+
+        print(f"Empty VectorStore detected. Auto-ingesting {len(patient_files)} default patient profiles...")
+        chunker = PatientRecordChunker()
+        for filepath in patient_files:
+            try:
+                chunks = chunker.chunk_from_file(filepath)
+                self.add_chunks(chunks)
+            except Exception as e:
+                print(f"Warning: Failed to auto-ingest {filepath}: {e}")
 
     def add_chunks(self, chunks: list[dict]) -> None:
         """
