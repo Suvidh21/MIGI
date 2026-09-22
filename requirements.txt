@@ -1,5 +1,6 @@
 # PyTorch - Core Deep Learning Framework
 torch
+torchvision
 
 # Hugging Face Transformers & Hub - Model loading and Serverless Inference API
 transformers
