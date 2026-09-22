@@ -4,11 +4,13 @@
 <p align="center">
   <a href="https://dr-migi.streamlit.app"><img src="https://static.streamlit.io/badges/streamlit_badge_black_white.svg" alt="Streamlit App"></a>
   &nbsp;
+  <a href="https://huggingface.co/suvidh21/dr-migi"><img src="https://img.shields.io/badge/🤗%20Model-suvidh21%2Fdr--migi-yellow" alt="Hugging Face Model"></a>
+  &nbsp;
   <a href="docs/LIVE_DEPLOYMENT_GUIDE.md"><img src="https://img.shields.io/badge/Deployment%20Guide-Streamlit%20%2B%20HuggingFace-blue?logo=huggingface" alt="Deployment Guide"></a>
 </p>
 
 <p align="center">
-  <b>🌐 Live Web App:</b> <a href="https://dr-migi.streamlit.app"><b>https://dr-migi.streamlit.app</b></a> (24/7 Cloud Demo)
+  <b>🌐 Live Web App:</b> <a href="https://dr-migi.streamlit.app"><b>https://dr-migi.streamlit.app</b></a> (24/7 Cloud — Running our fine-tuned model at $0.00)
 </p>
 
 <p align="center">
@@ -17,7 +19,7 @@
 
 DR. MIGI is an intelligent AI healthcare companion designed to assist doctors with **longitudinal patient analysis and clinical decision support**. This repository is built in generations — each one adding a new layer of capability.
 
-> **Current Status: Generation 1 (Clinical Brain) ✅ + Generation 2 (Memory/RAG) ✅ + Live Cloud Deployment ✅**
+> **Current Status: Generation 1 (Clinical Brain) ✅ + Generation 2 (Memory/RAG) ✅ + Fine-Tuned Model ✅ + Live Cloud Deployment ✅**
 > 
 > Full technical walkthrough of the free cloud deployment architecture: **[`docs/LIVE_DEPLOYMENT_GUIDE.md`](docs/LIVE_DEPLOYMENT_GUIDE.md)**.
 <p align="center">
@@ -40,6 +42,49 @@ DR. MIGI is not a chatbot. It is not designed for general users. It is a **clini
 Most AI systems are built to agree with you — to generate the most probable, human-sounding response. **DR. MIGI is built to do the opposite**: to stay grounded in clinical evidence and flag what the data actually shows, not what sounds reassuring.
 
 See [`notes/who_is_dr_migi.md`](notes/who_is_dr_migi.md) for the full long-term vision.
+
+---
+
+## 🚀 Live Cloud Deployment
+
+DR. MIGI is deployed as a **free, 24/7 live web application** — anyone can open it on phone or PC without downloading anything.
+
+### Architecture
+
+```
+┌──────────────────────────────────────────────────────────┐
+│              PRIVATE HUGGING FACE HUB                    │
+│   Repository: suvidh21/dr-migi (100% Private)            │
+│   Contents: model.safetensors (988 MB merged weights)    │
+│             tokenizer, config, chat_template              │
+└──────────────────────┬───────────────────────────────────┘
+                       │ Authenticated download via HF_TOKEN
+                       ▼
+┌──────────────────────────────────────────────────────────┐
+│              STREAMLIT COMMUNITY CLOUD                   │
+│   Container: 1 GB RAM (free tier)                        │
+│   Python 3.11 + PyTorch + Transformers                   │
+│   Model loaded in float16 (~490 MB)                      │
+│   Inference: ~4 tok/s on CPU                             │
+└──────────────────────┬───────────────────────────────────┘
+                       │
+                       ▼
+┌──────────────────────────────────────────────────────────┐
+│   🌐 https://dr-migi.streamlit.app                       │
+│   Live 24/7 — $0.00 cost — No downloads required         │
+│   Running OUR fine-tuned DR. MIGI model, not base Qwen   │
+└──────────────────────────────────────────────────────────┘
+```
+
+### Key Design Decisions
+
+| Decision | Why |
+|----------|-----|
+| **Private HF repo** (not GitHub) | GitHub has 100 MB file limit; model is 988 MB |
+| **float16 precision** on CPU | Halves RAM from ~1.9 GB (float32) to ~490 MB to fit 1 GB container |
+| **`low_cpu_mem_usage=True`** | Prevents PyTorch from doubling memory during model init |
+| **No HF Serverless API** | HF free serverless only supports public foundation models, not custom fine-tuned models |
+| **Our fine-tuned weights** | Live app runs `suvidh21/dr-migi` — our QLoRA fine-tuned + merged Qwen 2.5 0.5B, not the base model |
 
 ---
 
@@ -116,10 +161,10 @@ python notebooks/01_cpu_inference.py
 
 | File | Description |
 |---|---|
-| [`configs/inference_config.json`](configs/inference_config.json) | LLM model config and default generation hyperparameters |
+| [`configs/inference_config.json`](configs/inference_config.json) | Model config — points to `suvidh21/dr-migi` (our fine-tuned model) |
 | [`configs/rag_config.json`](configs/rag_config.json) | RAG hyperparameters (embedding model, ChromaDB path, top-k) |
-| [`backend/model/loader.py`](backend/model/loader.py) | HuggingFace environment routing, device detection, model loading |
-| [`backend/inference/engine.py`](backend/inference/engine.py) | `DrMigiEngine` — synchronous and streaming LLM inference |
+| [`backend/model/loader.py`](backend/model/loader.py) | Memory-optimized model loader — float16 on CPU, auto-detects local vs cloud |
+| [`backend/inference/engine.py`](backend/inference/engine.py) | `DrMigiEngine` — synchronous and streaming LLM inference (runs our fine-tuned model directly) |
 | [`backend/prompts/templates.py`](backend/prompts/templates.py) | Clinical system prompt + RAG-grounded prompt templates |
 | [`backend/utils/logger.py`](backend/utils/logger.py) | RAM/VRAM monitoring and execution timing |
 | [`backend/rag/chunker.py`](backend/rag/chunker.py) | Splits patient JSON records into visit-level text chunks |
@@ -127,19 +172,23 @@ python notebooks/01_cpu_inference.py
 | [`backend/rag/vector_store.py`](backend/rag/vector_store.py) | ChromaDB wrapper — store, upsert, and semantic search |
 | [`backend/rag/pipeline.py`](backend/rag/pipeline.py) | `DrMigiRAGPipeline` — full orchestration (retrieval + LLM) |
 
-### 📂 Scripts (`scripts/`)
+### 🎓 Training Pipeline (`scripts/training/`)
 
-| File / Folder | Description |
+| File | Description |
+|---|---|
+| [`scripts/training/train_migi.py`](scripts/training/train_migi.py) | QLoRA fine-tuning on 40K medical QA pairs (4-bit, rank 64) |
+| [`scripts/training/compare_migi.py`](scripts/training/compare_migi.py) | Base vs fine-tuned comparative evaluation |
+| [`scripts/training/merge_migi_model.py`](scripts/training/merge_migi_model.py) | Merges LoRA adapters into base weights → `models/MIGI-Qwen2.5-0.5B-v1/` |
+
+### 📂 Data Scripts (`scripts/data/`)
+
+| File | Description |
 |---|---|
 | [`scripts/data/ingest_patients.py`](scripts/data/ingest_patients.py) | Loads patient synthetic records into ChromaDB |
 | [`scripts/data/prepare_migi_dataset.py`](scripts/data/prepare_migi_dataset.py) | Formats MedMCQA records for fine-tuning |
 | [`scripts/data/clean_migi_dataset.py`](scripts/data/clean_migi_dataset.py) | Dataset validation and cleaning |
 | [`scripts/data/download_medmcqa.py`](scripts/data/download_medmcqa.py) | Downloads MedMCQA dataset |
 | [`scripts/data/filter_medmcqa.py`](scripts/data/filter_medmcqa.py) | Filters medical QA records |
-| [`scripts/training/train_migi.py`](scripts/training/train_migi.py) | QLoRA fine-tuning training loop |
-| [`scripts/training/compare_migi.py`](scripts/training/compare_migi.py) | Base vs fine-tuned comparative evaluation |
-| [`scripts/training/merge_migi_model.py`](scripts/training/merge_migi_model.py) | Merges LoRA adapters back into base weights |
-| [`scripts/training/smoke_test_qwen.py`](scripts/training/smoke_test_qwen.py) | Quick sanity check script for Qwen model |
 
 ### 📓 Notebooks, Docs & Tests
 
@@ -149,6 +198,7 @@ python notebooks/01_cpu_inference.py
 | [`notebooks/02_explain_tokens.py`](notebooks/02_explain_tokens.py) | Tokenization deep-dive — subword splits and token IDs |
 | [`notebooks/03_rag_demo.py`](notebooks/03_rag_demo.py) | Phase 2 — end-to-end RAG demo with 3 patients |
 | [`docs/notes/`](docs/notes/) | Architecture notes and lecture references |
+| [`docs/LIVE_DEPLOYMENT_GUIDE.md`](docs/LIVE_DEPLOYMENT_GUIDE.md) | Step-by-step guide to deploying DR. MIGI live |
 | [`tests/test_inference.py`](tests/test_inference.py) | Automated test suite for the inference engine |
 
 ---
@@ -179,7 +229,7 @@ MigiRetriever formats retrieved records into context string
        ↓
 DrMigiRAGPipeline injects context into clinical system prompt
        ↓
-Qwen 2.5 (DrMigiEngine) generates grounded clinical response ✅
+DR. MIGI (fine-tuned Qwen 2.5) generates grounded clinical response ✅
 ```
 
 **Key principle:** The LLM is not guessing from general medical knowledge. It is reasoning over actual, retrieved patient data — making responses patient-specific and clinically grounded.
@@ -203,13 +253,15 @@ The theoretical foundation of DR. MIGI is documented in [`notes/`](notes/):
 
 | Component | Tool | Notes |
 |---|---|---|
-| Foundation LLM | `Qwen2.5-0.5B-Instruct` | Runs locally on CPU/GPU — no API required |
+| Fine-Tuned LLM | `suvidh21/dr-migi` (Qwen 2.5 0.5B + QLoRA) | Our custom fine-tuned model on 40K medical QA pairs |
 | LLM Framework | `HuggingFace Transformers` + `PyTorch` | Standard inference stack |
 | Embedding Model | `BAAI/bge-small-en-v1.5` | 130MB, local, 384-dim vectors |
 | Vector Database | `ChromaDB` | On-disk, zero config, Apache 2.0 |
-| Language | Python 3.10+ | |
+| Model Hosting | `Hugging Face Hub` (Private) | Secure private vault for 988 MB model weights |
+| Web App | `Streamlit Community Cloud` | Free 24/7 hosting, auto-deploys from GitHub |
+| Language | Python 3.11 | |
 
-**No external APIs. No patient data sent to any server. Fully local.**
+**Model weights hosted privately on Hugging Face. No patient data sent to any server. Inference runs in-process.**
 
 ---
 
