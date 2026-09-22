@@ -2,15 +2,7 @@
 # DR. MIGI — AI Healthcare Companion
 
 <p align="center">
-  <a href="https://dr-migi.streamlit.app"><img src="https://static.streamlit.io/badges/streamlit_badge_black_white.svg" alt="Streamlit App"></a>
-  &nbsp;
-  <a href="https://huggingface.co/suvidh21/dr-migi"><img src="https://img.shields.io/badge/🤗%20Model-suvidh21%2Fdr--migi-yellow" alt="Hugging Face Model"></a>
-  &nbsp;
-  <a href="docs/LIVE_DEPLOYMENT_GUIDE.md"><img src="https://img.shields.io/badge/Deployment%20Guide-Streamlit%20%2B%20HuggingFace-blue?logo=huggingface" alt="Deployment Guide"></a>
-</p>
-
-<p align="center">
-  <b>🌐 Live Web App:</b> <a href="https://dr-migi.streamlit.app"><b>https://dr-migi.streamlit.app</b></a> (24/7 Cloud — Running our fine-tuned model at $0.00)
+  <b>🌐 Live Web App:</b> <a href="https://dr-migi.streamlit.app"><b>https://dr-migi.streamlit.app</b></a>
 </p>
 
 <p align="center">
