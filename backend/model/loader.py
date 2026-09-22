@@ -93,22 +93,41 @@ def load_model_and_tokenizer(model_name: str | None = None) -> tuple[AutoModelFo
     
     device, dtype = determine_optimal_device()
     
+    # Resolve token for private Hugging Face repositories
+    hf_token = os.environ.get("HF_TOKEN")
+    if not hf_token:
+        try:
+            import streamlit as st
+            if hasattr(st, "secrets") and "HF_TOKEN" in st.secrets:
+                hf_token = st.secrets["HF_TOKEN"]
+        except Exception:
+            pass
+
+    # Check if local model directory exists on disk to avoid downloading
+    local_model_path = os.path.join(PROJECT_ROOT, "models", "MIGI-Qwen2.5-0.5B-v1")
+    if os.path.isdir(local_model_path) and os.path.exists(os.path.join(local_model_path, "model.safetensors")):
+        load_source = local_model_path
+        logger.info(f"Loading from local merged model on disk: '{local_model_path}'")
+    else:
+        load_source = model_name
+        logger.info(f"Loading from repository: '{load_source}'")
+    
     # Load tokenizer
-    with Timer(f"Loading Tokenizer from '{model_name}'"):
+    with Timer(f"Loading Tokenizer from '{load_source}'"):
         tokenizer = AutoTokenizer.from_pretrained(
-            model_name,
+            load_source,
+            token=hf_token,
             trust_remote_code=True,
             cache_dir=config["cache_dir"]
         )
         
     # Load model
-    with Timer(f"Loading Causal LLM from '{model_name}'"):
-        # device_map="auto" automatically splits layers across active GPUs and CPU.
-        # For direct CPU force we configure it manually if optimal device is CPU.
+    with Timer(f"Loading Causal LLM from '{load_source}'"):
         device_map = "cpu" if device == "cpu" else "auto"
         
         model = AutoModelForCausalLM.from_pretrained(
-            model_name,
+            load_source,
+            token=hf_token,
             torch_dtype=dtype,
             device_map=device_map,
             low_cpu_mem_usage=True,
