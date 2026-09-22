@@ -1,6 +1,6 @@
 {
   "model_name": "suvidh21/dr-migi",
-  "api_model_name": "suvidh21/dr-migi",
+  "api_model_name": "Qwen/Qwen2.5-72B-Instruct",
   "backup_model_name": "Qwen/Qwen2.5-0.5B-Instruct",
   "cache_dir": "./models/cache",
   "default_generation_params": {
