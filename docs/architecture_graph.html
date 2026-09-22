@@ -514,7 +514,7 @@
         </div>
         <div style="display:flex; gap:20px; align-items:center;">
             <span>Drag nodes · Scroll to zoom · Click to inspect</span>
-            <span style="color:var(--accent-blue); font-weight:600;">Graphify v1.0</span>
+            <span style="color:var(--accent-blue); font-weight:600;">Graphify v2.0 (Live Cloud Architecture)</span>
         </div>
     </div>
 
@@ -526,35 +526,61 @@
     // ═══════════════════════════════════════════════════════════════
 
     const NODE_TYPES = {
-        'pipeline':  { color: '#38bdf8', label: 'Pipeline / Orchestrator', icon: '🔗' },
-        'engine':    { color: '#a78bfa', label: 'LLM Engine',              icon: '🧠' },
-        'model':     { color: '#f472b6', label: 'Model / Loader',         icon: '⚙️' },
-        'rag':       { color: '#22d3ee', label: 'RAG Component',          icon: '🔍' },
-        'prompt':    { color: '#4ade80', label: 'Prompts / Templates',    icon: '📝' },
-        'data':      { color: '#fb923c', label: 'Data / Config',          icon: '📊' },
-        'util':      { color: '#facc15', label: 'Utility',                icon: '🛠️' },
-        'ui':        { color: '#f87171', label: 'UI / Application',       icon: '🖥️' },
-        'test':      { color: '#818cf8', label: 'Test Suite',             icon: '🧪' },
-        'script':    { color: '#a3e635', label: 'Script',                 icon: '📜' },
-        'notebook':  { color: '#e879f9', label: 'Notebook / Demo',       icon: '📓' },
-        'external':  { color: '#64748b', label: 'External Dependency',    icon: '📦' },
+        'cloud':     { color: '#38bdf8', label: 'Cloud & Live Hosting',   icon: '☁️' },
+        'ui':        { color: '#f87171', label: 'Frontend / UI',          icon: '🖥️' },
+        'pipeline':  { color: '#0ea5e9', label: 'RAG Pipeline',           icon: '🔗' },
+        'engine':    { color: '#a78bfa', label: 'LLM Engine',             icon: '🧠' },
+        'model':     { color: '#f472b6', label: 'Model Weights & Loader', icon: '⚙️' },
+        'rag':       { color: '#22d3ee', label: 'RAG Core Component',    icon: '🔍' },
+        'prompt':    { color: '#4ade80', label: 'Prompts & Templates',   icon: '📝' },
+        'training':  { color: '#ec4899', label: 'Training Pipeline',     icon: '🏋️' },
+        'data':      { color: '#fb923c', label: 'Data & Datasets',       icon: '📊' },
+        'util':      { color: '#facc15', label: 'Utility',               icon: '🛠️' },
+        'script':    { color: '#a3e635', label: 'Data Script',           icon: '📜' },
+        'test':      { color: '#818cf8', label: 'Test Suite',            icon: '🧪' },
+        'notebook':  { color: '#e879f9', label: 'Notebook / Demo',      icon: '📓' },
+        'doc':       { color: '#34d399', label: 'Documentation & Guide', icon: '📚' },
+        'external':  { color: '#64748b', label: 'External Foundation',  icon: '📦' },
     };
 
     const nodes = [
-        // ─── Application Layer ───
+        // ─── Cloud & Live Hosting Layer ───
         {
-            id: 'app', name: 'app.py', type: 'ui', size: 38,
+            id: 'streamlit_cloud', name: 'Streamlit Cloud\n(dr-migi.streamlit.app)', type: 'cloud', size: 40,
+            file: 'https://dr-migi.streamlit.app',
+            description: '24/7 free cloud deployment on Streamlit Community Cloud. Serves the clinical UI and executes ChromaDB vector search with zero-RAM remote inference.',
+            methods: ['HTTP 200', 'Automated GitHub CI/CD sync', 'Encrypted Secrets Management'],
+            deps: ['app.py', 'frontend/app.py', 'suvidh21/dr-migi (Hugging Face)'],
+        },
+        {
+            id: 'hf_private_repo', name: 'Hugging Face Hub\n(suvidh21/dr-migi)', type: 'cloud', size: 38,
+            file: 'https://huggingface.co/suvidh21/dr-migi',
+            description: '100% private Hugging Face model repository storing DR. MIGI fine-tuned safetensors (988 MB), tokenizer, and configs. Protected by private HF_TOKEN.',
+            methods: ['model.safetensors (988MB)', 'tokenizer.json', 'chat_template.jinja', 'config.json'],
+            deps: ['HF_TOKEN (Streamlit Secrets)', 'QLoRA Merged Weights'],
+        },
+
+        // ─── Frontend / Application Layer ───
+        {
+            id: 'app_shim', name: 'app.py (Root Shim)', type: 'ui', size: 28,
             file: 'app.py',
-            description: 'Streamlit Web UI — the clinical intelligence platform. Provides patient selection, clinical inquiry input, RAG analysis execution, performance metrics display, and an interactive explainer tab.',
-            methods: ['get_rag_pipeline()', 'tab_query', 'tab_how_it_works'],
-            deps: ['DrMigiRAGPipeline', 'MigiRetriever', 'MigiVectorStore', 'MigiEmbedder', 'Streamlit'],
+            description: 'Root entrypoint shim for Streamlit Community Cloud and local launch. Injects project root into sys.path and dynamically executes frontend/app.py.',
+            methods: ['sys.path.insert(0, PROJECT_ROOT)', 'exec(frontend/app.py)'],
+            deps: ['frontend/app.py'],
+        },
+        {
+            id: 'frontend_app', name: 'frontend/app.py', type: 'ui', size: 38,
+            file: 'frontend/app.py',
+            description: 'Main Streamlit clinical web app. Features high-contrast dark theme, longitudinal patient profile selector, streaming chat, telemetry pills, and RAG context expander.',
+            methods: ['get_inference_engine()', 'get_rag_pipeline()', 'chat_input()', 'st.session_state'],
+            deps: ['backend.inference.engine', 'backend.rag.pipeline', 'Streamlit'],
         },
 
         // ─── Pipeline / Orchestrator ───
         {
             id: 'rag_pipeline', name: 'DrMigiRAGPipeline', type: 'pipeline', size: 42,
-            file: 'src/rag/pipeline.py',
-            description: 'The master RAG orchestrator. Combines retrieval (MigiRetriever) with LLM inference (DrMigiEngine). Retrieves relevant patient history → injects into prompt → generates grounded clinical response.',
+            file: 'backend/rag/pipeline.py',
+            description: 'The master RAG orchestrator. Combines retrieval (MigiRetriever) with LLM inference (DrMigiEngine). Retrieves relevant patient records → builds grounded clinical prompt → produces evidence-based assessment.',
             methods: ['__init__()', 'ask(patient_id, question)', 'ask_stream(patient_id, question)', '_build_rag_system_prompt(context)'],
             deps: ['DrMigiEngine', 'MigiRetriever', 'MigiEmbedder', 'MigiVectorStore', 'build_rag_messages()'],
         },
@@ -562,210 +588,268 @@
         // ─── Phase 1 — LLM Engine ───
         {
             id: 'engine', name: 'DrMigiEngine', type: 'engine', size: 36,
-            file: 'src/inference/engine.py',
-            description: 'The core LLM reasoning brain. Wraps the Qwen 2.5 model behind a clean interface with synchronous and streaming generation, chat template formatting, performance logging, and token metrics.',
-            methods: ['__init__()', 'generate_response(prompt, system_prompt)', 'generate_stream(prompt, system_prompt)'],
-            deps: ['load_model_and_tokenizer()', 'determine_optimal_device()', 'build_chat_messages()', 'TextIteratorStreamer'],
+            file: 'backend/inference/engine.py',
+            description: 'Dual-mode LLM reasoning brain. In Cloud Mode: queries Hugging Face Inference API with zero RAM usage. In Local Mode: loads local PyTorch model onto CUDA/CPU.',
+            methods: ['__init__()', 'generate_response(prompt, system_prompt)', 'generate_stream(prompt, system_prompt)', '_resolve_hf_token()'],
+            deps: ['backend.model.loader', 'backend.prompts.templates', 'backend.utils.logger', 'InferenceClient'],
         },
 
-        // ─── Model Loader ───
+        // ─── Model Loader & Standalone Weights ───
         {
-            id: 'loader', name: 'ModelLoader', type: 'model', size: 30,
-            file: 'src/model/loader.py',
-            description: 'Loads the Qwen 2.5 model & tokenizer with auto device detection (CPU/CUDA), HuggingFace cache redirection, and optimal dtype selection (float32/float16/bfloat16).',
+            id: 'loader', name: 'ModelLoader', type: 'model', size: 32,
+            file: 'backend/model/loader.py',
+            description: 'Intelligent loader. Auto-detects local merged model (models/MIGI-Qwen2.5-0.5B-v1) on disk to avoid re-downloading, or falls back to private Hugging Face repo.',
             methods: ['determine_optimal_device()', 'load_model_and_tokenizer(model_name)'],
-            deps: ['inference_config.json', 'AutoModelForCausalLM', 'AutoTokenizer', 'logger', 'Timer'],
+            deps: ['configs/inference_config.json', 'models/MIGI-Qwen2.5-0.5B-v1', 'suvidh21/dr-migi', 'AutoModelForCausalLM'],
+        },
+        {
+            id: 'local_merged_model', name: 'MIGI-Qwen2.5-0.5B-v1\n(Merged Weights)', type: 'model', size: 30,
+            file: 'models/MIGI-Qwen2.5-0.5B-v1/',
+            description: 'Standalone fine-tuned model directory on disk. Contains fused model.safetensors (988 MB), tokenizer.json, and generation configs ready for offline GPU execution.',
+            methods: ['model.safetensors (988MB)', 'tokenizer.json', 'chat_template.jinja'],
+            deps: ['merge_migi_model.py'],
         },
 
-        // ─── RAG Components ───
+        // ─── RAG Core Components ───
         {
-            id: 'chunker', name: 'PatientRecordChunker', type: 'rag', size: 28,
-            file: 'src/rag/chunker.py',
-            description: 'Splits patient JSON records into visit-level text chunks. Each chunk is a complete clinical encounter (vitals, diagnosis, labs, notes) — preserving clinical coherence for accurate semantic retrieval.',
+            id: 'chunker', name: 'PatientRecordChunker', type: 'rag', size: 26,
+            file: 'backend/rag/chunker.py',
+            description: 'Splits patient JSON records into visit-level clinical chunks (vitals, diagnoses, medications, labs, notes), preserving clinical continuity for semantic retrieval.',
             methods: ['chunk_patient(patient_data)', '_format_visit(header, visit)', 'chunk_from_file(filepath)'],
-            deps: ['Patient JSON files'],
+            deps: ['datasets/patients/*.json'],
         },
         {
-            id: 'embedder', name: 'MigiEmbedder', type: 'rag', size: 28,
-            file: 'src/rag/embedder.py',
-            description: 'Wraps BAAI/bge-small-en-v1.5 (130MB, 384-dim) to convert text into dense vector embeddings. Used at both ingestion time (chunks) and query time (doctor questions) to produce comparable vectors.',
-            methods: ['__init__()', 'embed_text(text)', 'embed_batch(texts)', 'embedding_dimension'],
-            deps: ['rag_config.json', 'SentenceTransformer'],
+            id: 'embedder', name: 'MigiEmbedder', type: 'rag', size: 26,
+            file: 'backend/rag/embedder.py',
+            description: 'Wraps BAAI/bge-small-en-v1.5 (384-dimensional dense vectors). Encodes patient visit chunks at ingestion time and doctor queries at query time.',
+            methods: ['__init__()', 'embed_text(text)', 'embed_batch(texts)', 'get_embedding_dimension()'],
+            deps: ['configs/rag_config.json', 'SentenceTransformer'],
         },
         {
-            id: 'vector_store', name: 'MigiVectorStore', type: 'rag', size: 30,
-            file: 'src/rag/vector_store.py',
-            description: 'ChromaDB wrapper providing persistent vector storage and semantic similarity search. Supports adding chunks, cosine similarity search, patient-filtered retrieval, and full patient timeline queries.',
-            methods: ['__init__()', 'add_chunks(chunks)', 'search(query, top_k, patient_id)', 'get_patient_chunks(patient_id)', 'collection_count()'],
-            deps: ['MigiEmbedder', 'rag_config.json', 'ChromaDB'],
+            id: 'vector_store', name: 'MigiVectorStore', type: 'rag', size: 28,
+            file: 'backend/rag/vector_store.py',
+            description: 'Persistent ChromaDB client. Indexes patient embeddings with cosine similarity HNSW index, metadata filtering by patient_id, and automatic fallback ingestion.',
+            methods: ['__init__()', 'add_chunks(chunks)', 'search(query, top_k, patient_id)', 'get_patient_chunks(patient_id)'],
+            deps: ['MigiEmbedder', 'configs/rag_config.json', 'ChromaDB'],
         },
         {
-            id: 'retriever', name: 'MigiRetriever', type: 'rag', size: 28,
-            file: 'src/rag/retriever.py',
-            description: 'Bridge between raw retrieval and prompt construction. Takes a query → retrieves top-k relevant visit chunks → formats them into a numbered, chronological context string ready for LLM injection.',
-            methods: ['__init__()', 'retrieve(query, patient_id)', 'retrieve_raw(query, patient_id)', 'retrieve_full_timeline(patient_id)'],
-            deps: ['MigiVectorStore', 'rag_config.json'],
+            id: 'retriever', name: 'MigiRetriever', type: 'rag', size: 26,
+            file: 'backend/rag/retriever.py',
+            description: 'Bridges raw vector search with prompt synthesis. Retrieves top-k relevant visit records and formats them into a chronologically ordered context string.',
+            methods: ['__init__()', 'retrieve(query, patient_id)', 'retrieve_full_timeline(patient_id)'],
+            deps: ['MigiVectorStore', 'configs/rag_config.json'],
         },
 
-        // ─── Prompts ───
+        // ─── Prompts & Templates ───
         {
-            id: 'templates', name: 'Prompt Templates', type: 'prompt', size: 26,
-            file: 'src/prompts/templates.py',
-            description: 'Clinical persona definitions and message template generators. Defines the base DR. MIGI system prompt, the RAG-grounded prompt with context injection markers, and Qwen chat message builders.',
+            id: 'templates', name: 'Prompt Templates', type: 'prompt', size: 24,
+            file: 'backend/prompts/templates.py',
+            description: 'Clinical system prompts and chat formatting. Enforces strict clinical qualifiers, disallows prescribing, and injects retrieved evidence blocks.',
             methods: ['build_chat_messages(user_content, system_prompt)', 'build_rag_messages(user_query, patient_context)'],
             deps: ['DR_MIGI_SYSTEM_PROMPT', 'DR_MIGI_RAG_SYSTEM_PROMPT_TEMPLATE'],
         },
 
-        // ─── Utils ───
+        // ─── Training Pipeline ───
         {
-            id: 'logger', name: 'Logger & Timer', type: 'util', size: 22,
-            file: 'src/utils/logger.py',
-            description: 'Production-grade logging with RAM/VRAM monitoring (via psutil + torch.cuda) and a high-resolution Timer context manager for execution profiling.',
-            methods: ['get_memory_usage()', 'log_resource_state(stage)', 'Timer(description)'],
-            deps: ['psutil', 'torch', 'logging'],
+            id: 'train_script', name: 'train_migi.py', type: 'training', size: 28,
+            file: 'scripts/training/train_migi.py',
+            description: 'QLoRA fine-tuning training loop using Hugging Face TRL & SFTTrainer. Trains Qwen 2.5 on 40,000 MedMCQA medical question-answering samples with rank 16 adapters.',
+            methods: ['prepare_model()', 'train()', 'compute_metrics()'],
+            deps: ['migi_medical_40k/', 'Qwen/Qwen2.5-0.5B-Instruct', 'migi_qlora_output/'],
         },
         {
-            id: 'converter', name: 'SafeTensors Converter', type: 'util', size: 18,
-            file: 'src/utils/convert_safetensors.py',
-            description: 'Converts Qwen model.safetensors to pytorch_model.bin for Windows environments where memory-mapped safetensors loading fails.',
-            methods: ['convert_safetensors_to_bin(snapshot_dir)'],
-            deps: ['torch', 'struct'],
+            id: 'qlora_output', name: 'QLoRA Adapters\n(migi_qlora_output)', type: 'training', size: 26,
+            file: 'migi_qlora_output/full_training/',
+            description: 'Trained LoRA adapter weights (adapter_model.safetensors 35.2 MB), checkpoint snapshots, and training arguments bin.',
+            methods: ['adapter_model.safetensors (35MB)', 'adapter_config.json'],
+            deps: ['train_migi.py'],
+        },
+        {
+            id: 'merge_script', name: 'merge_migi_model.py', type: 'training', size: 26,
+            file: 'scripts/training/merge_migi_model.py',
+            description: 'Fuses LoRA adapters from migi_qlora_output with base Qwen weights to create the standalone production model models/MIGI-Qwen2.5-0.5B-v1.',
+            methods: ['merge_and_unload()', 'save_pretrained()'],
+            deps: ['migi_qlora_output/', 'models/MIGI-Qwen2.5-0.5B-v1/'],
+        },
+        {
+            id: 'compare_script', name: 'compare_migi.py', type: 'training', size: 22,
+            file: 'scripts/training/compare_migi.py',
+            description: 'Evaluates base Qwen 2.5 against fine-tuned DR. MIGI side-by-side on clinical test prompts to quantify reasoning gains.',
+            methods: ['evaluate_pair(prompt)'],
+            deps: ['models/MIGI-Qwen2.5-0.5B-v1', 'Qwen/Qwen2.5-0.5B-Instruct'],
         },
 
-        // ─── Data / Config ───
+        // ─── Data Pipeline & Datasets ───
+        {
+            id: 'ingest_script', name: 'ingest_patients.py', type: 'script', size: 24,
+            file: 'scripts/data/ingest_patients.py',
+            description: 'Loads multi-year patient histories from JSON into ChromaDB via visit chunking and dense vector embedding. Idempotent via upsert.',
+            methods: ['main()'],
+            deps: ['PatientRecordChunker', 'MigiEmbedder', 'MigiVectorStore'],
+        },
+        {
+            id: 'prepare_dataset', name: 'prepare_migi_dataset.py', type: 'script', size: 22,
+            file: 'scripts/data/prepare_migi_dataset.py',
+            description: 'Prepares raw MedMCQA medical QA records into Qwen conversational chat template format for QLoRA instruction tuning.',
+            methods: ['format_chat_template()', 'save_dataset()'],
+            deps: ['migi_medical_40k/'],
+        },
+        {
+            id: 'patient_data', name: 'Patient Records (P001-P003)', type: 'data', size: 24,
+            file: 'datasets/patients/*.json',
+            description: '3 synthetic longitudinal patient trajectories: P001 (Diabetes progression), P002 (Cardiac NSTEMI), P003 (COPD exacerbation).',
+            methods: ['P001_john_doe.json', 'P002_priya_sharma.json', 'P003_ramesh_iyer.json'],
+            deps: [],
+        },
+        {
+            id: 'migi_dataset', name: 'migi_medical_40k', type: 'data', size: 24,
+            file: 'migi_medical_40k/',
+            description: '40,000 curated and cleaned MedMCQA medical examination question-answer pairs formatted for clinical fine-tuning.',
+            methods: ['train.json', 'validation.json'],
+            deps: ['prepare_migi_dataset.py'],
+        },
+
+        // ─── Configuration & Utilities ───
         {
             id: 'inference_config', name: 'inference_config.json', type: 'data', size: 20,
             file: 'configs/inference_config.json',
-            description: 'LLM configuration: model name (Qwen2.5-0.5B-Instruct), HF cache path, and default generation hyperparameters (temperature, top_p, top_k, max_new_tokens).',
-            methods: [],
-            deps: [],
+            description: 'Configuration specifying suvidh21/dr-migi model name, cache paths, and generation parameters (temperature, top_p, top_k).',
+            methods: [], deps: [],
         },
         {
             id: 'rag_config', name: 'rag_config.json', type: 'data', size: 20,
             file: 'configs/rag_config.json',
-            description: 'RAG configuration: embedding model, ChromaDB path, collection name, top-k retrieval count, minimum relevance score.',
-            methods: [],
-            deps: [],
+            description: 'RAG hyperparameters: embedding model (BAAI/bge-small-en-v1.5), ChromaDB path, top-k retrieval count, and collection name.',
+            methods: [], deps: [],
         },
         {
-            id: 'patient_data', name: 'Patient Records', type: 'data', size: 26,
-            file: 'datasets/patients/*.json',
-            description: '3 synthetic patient JSON files: P001 (Diabetes trajectory), P002 (Cardiac trajectory), P003 (Pulmonary trajectory). Each contains demographics, chronic conditions, family history, and multi-year visit history.',
-            methods: ['P001_john_doe.json', 'P002_priya_sharma.json', 'P003_ramesh_iyer.json'],
+            id: 'logger', name: 'Logger & Timer', type: 'util', size: 20,
+            file: 'backend/utils/logger.py',
+            description: 'Production logging with real-time RAM/VRAM tracking and high-precision execution timing context manager.',
+            methods: ['get_memory_usage()', 'Timer(description)'],
+            deps: ['psutil', 'torch'],
+        },
+
+        // ─── Documentation & Guides ───
+        {
+            id: 'deploy_guide', name: 'LIVE_DEPLOYMENT_GUIDE.md', type: 'doc', size: 24,
+            file: 'docs/LIVE_DEPLOYMENT_GUIDE.md',
+            description: 'Comprehensive architectural guide documenting how DR. MIGI was deployed to a 100% free live URL using Streamlit Cloud and Private Hugging Face Hub.',
+            methods: ['Architecture Blueprint', 'IP Protection', 'Secrets Configuration'],
+            deps: ['Streamlit Cloud', 'Hugging Face Hub'],
+        },
+        {
+            id: 'lecture_notes', name: 'Engineering Notes (1-10)', type: 'doc', size: 22,
+            file: 'docs/notes/*.md',
+            description: '10 engineering lectures covering transformers, BPE tokenization, embedding geometries, attention mechanisms, vector databases, and RAG.',
+            methods: ['Lectures 01-10'],
             deps: [],
         },
 
-        // ─── Scripts ───
+        // ─── Notebooks & Tests ───
         {
-            id: 'ingest', name: 'ingest_patients.py', type: 'script', size: 24,
-            file: 'scripts/ingest_patients.py',
-            description: 'One-time ingestion script. Scans patient JSON files → chunks by visit → embeds with BAAI/bge-small → stores in ChromaDB. Idempotent via upsert.',
-            methods: ['main()'],
-            deps: ['PatientRecordChunker', 'MigiEmbedder', 'MigiVectorStore'],
-        },
-
-        // ─── Notebooks ───
-        {
-            id: 'nb_inference', name: '01_cpu_inference.py', type: 'notebook', size: 20,
+            id: 'nb_inference', name: '01_cpu_inference.py', type: 'notebook', size: 18,
             file: 'notebooks/01_cpu_inference.py',
-            description: 'Phase 1 walkthrough — direct LLM inference without RAG. Demonstrates model loading, synchronous & streaming generation.',
-            methods: [],
-            deps: ['DrMigiEngine'],
+            description: 'Phase 1 walkthrough demonstrating standalone LLM loading and generation.',
+            methods: [], deps: ['DrMigiEngine'],
         },
         {
             id: 'nb_tokens', name: '02_explain_tokens.py', type: 'notebook', size: 18,
             file: 'notebooks/02_explain_tokens.py',
-            description: 'Deep-dive into Qwen tokenization: subword splits, BPE vocabulary (151,936 tokens), special tokens, and token ID mapping.',
-            methods: [],
-            deps: ['AutoTokenizer'],
+            description: 'Deep-dive into Qwen tokenization, subword splits, and vocabulary mapping.',
+            methods: [], deps: ['AutoTokenizer'],
         },
         {
-            id: 'nb_rag', name: '03_rag_demo.py', type: 'notebook', size: 22,
+            id: 'nb_rag', name: '03_rag_demo.py', type: 'notebook', size: 20,
             file: 'notebooks/03_rag_demo.py',
-            description: 'End-to-end RAG demo with all 3 patients. Shows retrieval, context injection, and grounded LLM clinical analysis.',
-            methods: [],
-            deps: ['DrMigiRAGPipeline'],
+            description: 'Phase 2 end-to-end RAG demonstration querying all 3 patients from ChromaDB.',
+            methods: [], deps: ['DrMigiRAGPipeline'],
         },
-
-        // ─── Tests ───
         {
-            id: 'tests', name: 'test_inference.py', type: 'test', size: 22,
+            id: 'tests', name: 'test_inference.py', type: 'test', size: 20,
             file: 'tests/test_inference.py',
-            description: 'Automated test suite for DrMigiEngine: validates model initialization, synchronous generation output structure, and streaming generation correctness.',
-            methods: ['test_engine_initialization()', 'test_synchronous_generation()', 'test_streaming_generation()'],
+            description: 'Automated test suite validating engine initialization, response format, and token streaming.',
+            methods: ['test_engine_initialization()', 'test_synchronous_generation()'],
             deps: ['DrMigiEngine'],
         },
 
-        // ─── External Dependencies ───
+        // ─── External Foundations ───
         {
-            id: 'ext_qwen', name: 'Qwen 2.5\n(0.5B-Instruct)', type: 'external', size: 24,
+            id: 'ext_qwen', name: 'Qwen/Qwen2.5-0.5B-Instruct', type: 'external', size: 22,
             file: 'HuggingFace Hub',
-            description: 'Foundation LLM — Qwen2.5-0.5B-Instruct. Runs locally on CPU/GPU with no API required. Decoder-only transformer with 24 layers, GQA attention.',
+            description: 'Foundation base causal language model used as base for DR. MIGI fine-tuning.',
             methods: [], deps: [],
         },
         {
-            id: 'ext_bge', name: 'BAAI/bge-small\n(en-v1.5)', type: 'external', size: 22,
+            id: 'ext_bge', name: 'BAAI/bge-small-en-v1.5', type: 'external', size: 22,
             file: 'HuggingFace Hub',
-            description: 'Embedding model — 130MB, 384-dimensional output vectors. Apache 2.0 license. Top BEIR benchmark performer at its size class.',
+            description: 'Top-tier 384-dimensional dense semantic embedding model.',
             methods: [], deps: [],
         },
         {
             id: 'ext_chroma', name: 'ChromaDB', type: 'external', size: 22,
             file: 'pip package',
-            description: 'Local vector database — on-disk, zero config, Apache 2.0. Supports metadata filtering and cosine similarity HNSW index.',
-            methods: [], deps: [],
-        },
-        {
-            id: 'ext_streamlit', name: 'Streamlit', type: 'external', size: 22,
-            file: 'pip package',
-            description: 'Web framework for the clinical intelligence dashboard. Provides caching, widgets, columns, tabs, and reactive reruns.',
+            description: 'Local on-disk vector database with persistent HNSW index.',
             methods: [], deps: [],
         },
     ];
 
     const links = [
-        // App → Pipeline
-        { source: 'app', target: 'rag_pipeline', label: 'initializes & calls ask()' },
-        { source: 'app', target: 'ext_streamlit', label: 'UI framework' },
+        // Live Cloud Deployment Flow
+        { source: 'streamlit_cloud', target: 'app_shim', label: 'hosts & launches' },
+        { source: 'streamlit_cloud', target: 'hf_private_repo', label: 'authenticated API queries (HF_TOKEN)' },
+        { source: 'app_shim', target: 'frontend_app', label: 'executes forwarding shim' },
+        { source: 'frontend_app', target: 'rag_pipeline', label: 'initializes & queries' },
+        { source: 'frontend_app', target: 'engine', label: 'direct clinical chat' },
 
-        // Pipeline → Components
+        // Pipeline Orchestration
         { source: 'rag_pipeline', target: 'engine', label: 'generate_response()' },
         { source: 'rag_pipeline', target: 'retriever', label: 'retrieve(query)' },
         { source: 'rag_pipeline', target: 'embedder', label: 'initializes' },
         { source: 'rag_pipeline', target: 'vector_store', label: 'initializes' },
         { source: 'rag_pipeline', target: 'templates', label: 'build_rag_messages()' },
 
-        // Engine → Dependencies
+        // Engine & Loader Flow
         { source: 'engine', target: 'loader', label: 'load_model_and_tokenizer()' },
         { source: 'engine', target: 'templates', label: 'build_chat_messages()' },
         { source: 'engine', target: 'logger', label: 'logging & Timer' },
-
-        // Loader → Config / Externals
+        { source: 'loader', target: 'local_merged_model', label: 'loads from disk (PC)' },
+        { source: 'loader', target: 'hf_private_repo', label: 'loads from private hub (Cloud)' },
         { source: 'loader', target: 'inference_config', label: 'reads config' },
-        { source: 'loader', target: 'ext_qwen', label: 'loads model weights' },
-        { source: 'loader', target: 'logger', label: 'log_resource_state()' },
 
-        // RAG chain
+        // Training & Merging Pipeline
+        { source: 'train_script', target: 'ext_qwen', label: 'base model' },
+        { source: 'train_script', target: 'migi_dataset', label: 'trains on MedMCQA' },
+        { source: 'train_script', target: 'qlora_output', label: 'outputs adapters' },
+        { source: 'merge_script', target: 'qlora_output', label: 'reads adapters' },
+        { source: 'merge_script', target: 'local_merged_model', label: 'generates standalone model' },
+        { source: 'local_merged_model', target: 'hf_private_repo', label: 'uploaded to private repo' },
+        { source: 'compare_script', target: 'local_merged_model', label: 'evaluates' },
+
+        // RAG Storage Chain
         { source: 'retriever', target: 'vector_store', label: 'search()' },
         { source: 'vector_store', target: 'embedder', label: 'embed_text/batch()' },
         { source: 'vector_store', target: 'ext_chroma', label: 'PersistentClient' },
         { source: 'embedder', target: 'ext_bge', label: 'SentenceTransformer' },
-        { source: 'embedder', target: 'rag_config', label: 'reads config' },
         { source: 'vector_store', target: 'rag_config', label: 'reads config' },
+        { source: 'embedder', target: 'rag_config', label: 'reads config' },
         { source: 'retriever', target: 'rag_config', label: 'reads config' },
 
-        // Ingestion
-        { source: 'ingest', target: 'chunker', label: 'chunk_from_file()' },
-        { source: 'ingest', target: 'embedder', label: 'initializes' },
-        { source: 'ingest', target: 'vector_store', label: 'add_chunks()' },
-        { source: 'chunker', target: 'patient_data', label: 'parses JSON' },
+        // Data Ingestion Chain
+        { source: 'ingest_script', target: 'chunker', label: 'chunk_from_file()' },
+        { source: 'ingest_script', target: 'embedder', label: 'embeds visit chunks' },
+        { source: 'ingest_script', target: 'vector_store', label: 'add_chunks()' },
+        { source: 'chunker', target: 'patient_data', label: 'parses JSON records' },
+        { source: 'prepare_dataset', target: 'migi_dataset', label: 'formats medical QA' },
 
-        // Notebooks
-        { source: 'nb_inference', target: 'engine', label: 'uses' },
-        { source: 'nb_rag', target: 'rag_pipeline', label: 'uses' },
+        // Documentation Connections
+        { source: 'deploy_guide', target: 'streamlit_cloud', label: 'documents live app' },
+        { source: 'deploy_guide', target: 'hf_private_repo', label: 'documents private hub' },
 
-        // Tests
+        // Verification & Demos
         { source: 'tests', target: 'engine', label: 'validates' },
+        { source: 'nb_inference', target: 'engine', label: 'demonstrates' },
+        { source: 'nb_rag', target: 'rag_pipeline', label: 'demonstrates' },
     ];
 
     // ═══════════════════════════════════════════════════════════════
