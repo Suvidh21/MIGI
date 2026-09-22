@@ -8,7 +8,7 @@ os.environ["HF_HOME"] = "I:/suvidh/MIGI-main/models/cache"
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.inference.engine import DrMigiEngine
+from backend.inference.engine import DrMigiEngine
 
 class TestDrMigiEngine(unittest.TestCase):
     """

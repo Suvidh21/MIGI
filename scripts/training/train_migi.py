@@ -43,7 +43,7 @@ from peft import (
 # PATHS
 # ============================================================
 
-PROJECT_DIR = Path("I:/suvidh/MIGI-main")
+PROJECT_DIR = Path(__file__).resolve().parents[2]
 
 # Existing LOCAL Qwen 2.5 0.5B
 MODEL_CACHE = (

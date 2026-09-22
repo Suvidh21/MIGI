@@ -8,9 +8,9 @@ os.environ["HF_HOME"] = "D:/Suvidh/Suvidh/DR.MIGI/models/cache"
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import torch
-from src.model.loader import load_model_and_tokenizer, determine_optimal_device
-from src.prompts.templates import build_chat_messages
-from src.utils.logger import logger, Timer
+from backend.model.loader import load_model_and_tokenizer, determine_optimal_device
+from backend.prompts.templates import build_chat_messages
+from backend.utils.logger import logger, Timer
 
 def main():
     print("=====================================================================")

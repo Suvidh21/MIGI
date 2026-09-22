@@ -1,5 +1,5 @@
 import json
-from src.rag.vector_store import MigiVectorStore
+from backend.rag.vector_store import MigiVectorStore
 
 
 class MigiRetriever:

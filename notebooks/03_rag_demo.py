@@ -25,11 +25,11 @@ import sys
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.rag.chunker import PatientRecordChunker
-from src.rag.embedder import MigiEmbedder
-from src.rag.vector_store import MigiVectorStore
-from src.rag.retriever import MigiRetriever
-from src.rag.pipeline import DrMigiRAGPipeline
+from backend.rag.chunker import PatientRecordChunker
+from backend.rag.embedder import MigiEmbedder
+from backend.rag.vector_store import MigiVectorStore
+from backend.rag.retriever import MigiRetriever
+from backend.rag.pipeline import DrMigiRAGPipeline
 
 CONFIG_PATH = "configs/rag_config.json"
 SEPARATOR = "\n" + "=" * 70 + "\n"
@@ -168,7 +168,7 @@ def demo_streaming(embedder, vector_store, retriever):
     print("DEMO 3: Streaming Response — Real-Time Token Generation")
     print(SEPARATOR)
 
-    from src.rag.pipeline import DrMigiRAGPipeline
+    from backend.rag.pipeline import DrMigiRAGPipeline
     pipeline = DrMigiRAGPipeline(config_path=CONFIG_PATH)
 
     question = "Is this patient at risk of developing complications in the near future?"

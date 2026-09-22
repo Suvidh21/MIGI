@@ -9,7 +9,7 @@ from peft import PeftModel
 # DR. MIGI V1 — MERGE LoRA INTO QWEN 0.5B
 # ============================================================
 
-PROJECT_DIR = Path("I:/suvidh/MIGI-main")
+PROJECT_DIR = Path(__file__).resolve().parents[2]
 
 MODEL_CACHE = (
     PROJECT_DIR

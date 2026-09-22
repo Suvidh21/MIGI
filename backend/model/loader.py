@@ -2,7 +2,7 @@ import os
 import json
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from src.utils.logger import logger, log_resource_state, Timer
+from backend.utils.logger import logger, log_resource_state, Timer
 
 # =======================================================================
 # CONFIGURATION LOAD

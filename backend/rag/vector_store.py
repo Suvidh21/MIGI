@@ -2,8 +2,8 @@ import os
 import json
 import chromadb
 from chromadb.config import Settings
-from src.rag.embedder import MigiEmbedder
-from src.rag.chunker import PatientRecordChunker
+from backend.rag.embedder import MigiEmbedder
+from backend.rag.chunker import PatientRecordChunker
 
 
 class MigiVectorStore:

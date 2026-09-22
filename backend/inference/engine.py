@@ -1,9 +1,9 @@
 import time
 from threading import Thread
 from transformers import TextIteratorStreamer
-from src.model.loader import load_model_and_tokenizer, determine_optimal_device, config
-from src.prompts.templates import build_chat_messages
-from src.utils.logger import logger, Timer
+from backend.model.loader import load_model_and_tokenizer, determine_optimal_device, config
+from backend.prompts.templates import build_chat_messages
+from backend.utils.logger import logger, Timer
 
 class DrMigiEngine:
     """

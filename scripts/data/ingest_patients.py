@@ -20,12 +20,12 @@ Re-running is safe — ChromaDB upserts will update existing records without dup
 import os
 import sys
 
-# Add project root to path so src.* imports work
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add project root to path so backend.* imports work
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from src.rag.chunker import PatientRecordChunker
-from src.rag.embedder import MigiEmbedder
-from src.rag.vector_store import MigiVectorStore
+from backend.rag.chunker import PatientRecordChunker
+from backend.rag.embedder import MigiEmbedder
+from backend.rag.vector_store import MigiVectorStore
 
 PATIENTS_DIR = "datasets/patients"
 CONFIG_PATH  = "configs/rag_config.json"

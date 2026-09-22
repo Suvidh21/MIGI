@@ -1,8 +1,8 @@
-from src.inference.engine import DrMigiEngine
-from src.rag.retriever import MigiRetriever
-from src.rag.embedder import MigiEmbedder
-from src.rag.vector_store import MigiVectorStore
-from src.prompts.templates import build_rag_messages
+from backend.inference.engine import DrMigiEngine
+from backend.rag.retriever import MigiRetriever
+from backend.rag.embedder import MigiEmbedder
+from backend.rag.vector_store import MigiVectorStore
+from backend.prompts.templates import build_rag_messages
 
 
 class DrMigiRAGPipeline:
