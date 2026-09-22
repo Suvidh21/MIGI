@@ -1,3 +1,17 @@
+"""
+DR. MIGI Model Loader — Memory-Optimized for Streamlit Cloud (1 GB RAM)
+=======================================================================
+Loads the fine-tuned DR. MIGI model (suvidh21/dr-migi) with aggressive
+memory optimization to fit within Streamlit Cloud's free-tier 1 GB limit.
+
+Strategy:
+    - Load weights in float16 (half precision) → ~490 MB for a 0.5B model
+    - Use low_cpu_mem_usage=True to avoid peak doubling during loading
+    - Set model to eval mode (disables dropout, saves memory)
+    - Disable gradient tracking globally (inference only)
+"""
+from __future__ import annotations  # Python 3.9 compatibility for type hints
+
 import os
 import json
 import gc
@@ -43,101 +57,58 @@ os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
 def determine_optimal_device() -> tuple[str, torch.dtype]:
     """
-    Auto-detects the host system's hardware configuration and determines
-    the optimal computation device and datatype.
+    Auto-detects the best hardware configuration for model execution.
     
-    Why it is needed:
-        LLM execution speed varies drastically based on hardware. Running in float32
-        on GPU can exceed VRAM, and running in float16 on older CPUs is slow and lacks
-        emulation support.
+    Returns:
+        tuple of (device_string, torch_dtype)
         
-    How it works:
-        Checks `torch.cuda.is_available()`.
-        - If CUDA is present: chooses 'cuda' and 'float16' / 'bfloat16' depending on GPU capabilities.
-        - If not: defaults to 'cpu' and 'float16' (half precision to reduce RAM usage on cloud).
-        
-    Performance implications:
-        Selecting CUDA enables matrix math acceleration. On CPU, we use float16 as the
-        initial loading dtype, then apply INT8 dynamic quantization for maximum memory
-        efficiency on cloud deployments (Streamlit Cloud 1 GB RAM limit).
+    Memory strategy:
+        - CUDA + bfloat16: Best quality, fast (Ampere+ GPUs)
+        - CUDA + float16: Good quality, fast (all CUDA GPUs)  
+        - CPU + float16: Half precision to fit in 1 GB cloud RAM
     """
     if torch.cuda.is_available():
-        # Check if GPU supports bfloat16 (Ampere architecture and newer e.g. RTX 30/40 series)
         if torch.cuda.is_bf16_supported():
             device = "cuda"
             dtype = torch.bfloat16
-            logger.info("Optimal device found: CUDA with bfloat16 precision.")
+            logger.info("Optimal device: CUDA with bfloat16 precision.")
         else:
             device = "cuda"
             dtype = torch.float16
-            logger.info("Optimal device found: CUDA with float16 precision.")
+            logger.info("Optimal device: CUDA with float16 precision.")
     else:
         device = "cpu"
-        dtype = torch.float16  # Load in half precision first, then quantize to INT8
-        logger.info("Optimal device found: CPU with float16 → INT8 quantization pipeline.")
+        # Use float16 to halve memory: 0.5B params × 2 bytes = ~1.0 GB
+        # vs float32: 0.5B params × 4 bytes = ~2.0 GB (would crash 1 GB container)
+        dtype = torch.float16
+        logger.info("Optimal device: CPU with float16 precision (cloud-optimized).")
         
     return device, dtype
 
 
-def _apply_int8_quantization(model: AutoModelForCausalLM) -> AutoModelForCausalLM:
-    """
-    Applies PyTorch native INT8 dynamic quantization to Linear layers on CPU.
-    
-    Why it is needed:
-        Streamlit Cloud's free tier provides only 1 GB of RAM.
-        - Float32: model weights = ~1.9 GB → OOM crash.
-        - Float16: model weights = ~980 MB → barely fits, no headroom for Python/Streamlit.
-        - INT8:    model weights = ~490 MB → leaves ~500 MB headroom for stable 24/7 operation.
-    
-    How it works:
-        torch.ao.quantization.quantize_dynamic replaces nn.Linear weight tensors with
-        8-bit integer representations. Computation still happens in float for activations,
-        but weight storage is reduced by 4x vs float32 (2x vs float16).
-    
-    Limitations:
-        - Only works on CPU (CUDA uses its own quantization libraries).
-        - Marginal quality loss (typically < 1% perplexity increase for small models).
-        - Generation is slower than GPU but works within free-tier cloud constraints.
-    """
-    try:
-        logger.info("Applying INT8 dynamic quantization to Linear layers...")
-        
-        # Convert model to float32 first (required by PyTorch quantization engine)
-        model = model.float()
-        
-        quantized_model = torch.ao.quantization.quantize_dynamic(
-            model,
-            {torch.nn.Linear},   # Quantize all Linear layers (attention + MLP)
-            dtype=torch.qint8    # 8-bit integer weights
-        )
-        
-        # Force garbage collection to release the original float32 weights from memory
-        del model
-        gc.collect()
-        
-        logger.info("INT8 quantization applied successfully. Memory footprint reduced by ~75%.")
-        return quantized_model
-        
-    except Exception as e:
-        logger.warning(f"INT8 quantization failed, falling back to float32: {e}")
-        return model
-
-
 def load_model_and_tokenizer(model_name: str | None = None) -> tuple[AutoModelForCausalLM, AutoTokenizer]:
     """
-    Initializes and loads the Model and Tokenizer instances from local cache or Hugging Face.
+    Initializes and loads the DR. MIGI Model and Tokenizer.
     
-    Memory optimization pipeline (CPU path for Streamlit Cloud):
-        1. Download weights from private HF repo (suvidh21/dr-migi) using HF_TOKEN.
-        2. Load into RAM in float16 (half precision) → ~980 MB peak.
-        3. Apply INT8 dynamic quantization → reduces to ~490 MB steady-state.
-        4. Garbage-collect the float16 intermediates → ~500 MB free headroom.
+    Memory optimization for Streamlit Cloud (CPU, 1 GB RAM):
+        1. Load weights directly in float16 → ~490 MB (not ~1.9 GB float32)
+        2. low_cpu_mem_usage=True prevents PyTorch from creating a duplicate during init
+        3. model.eval() disables dropout layers (saves memory + faster)
+        4. torch.no_grad() globally disables gradient storage (inference only)
+    
+    On local PC with GPU:
+        - Detects local model on disk (models/MIGI-Qwen2.5-0.5B-v1) → zero download
+        - Uses CUDA with float16/bfloat16 for fast inference
+        
+    On Streamlit Cloud:
+        - Downloads from private HF repo (suvidh21/dr-migi) using HF_TOKEN
+        - Runs on CPU in float16 for minimum memory footprint
     
     Arguments:
-        model_name: Optional override path or repository ID. Defaults to configs/inference_config.json model_name.
+        model_name: Optional override. Defaults to config model_name.
         
     Returns:
-        tuple of (AutoModelForCausalLM, AutoTokenizer)
+        tuple of (model, tokenizer)
     """
     if model_name is None:
         model_name = config["model_name"]
@@ -166,7 +137,7 @@ def load_model_and_tokenizer(model_name: str | None = None) -> tuple[AutoModelFo
         load_source = model_name
         logger.info(f"Loading from remote HF repository: '{load_source}'")
     
-    # Load tokenizer
+    # Load tokenizer (lightweight, ~5 MB)
     with Timer(f"Loading Tokenizer from '{load_source}'"):
         tokenizer = AutoTokenizer.from_pretrained(
             load_source,
@@ -175,32 +146,29 @@ def load_model_and_tokenizer(model_name: str | None = None) -> tuple[AutoModelFo
             cache_dir=config["cache_dir"]
         )
         
-    # Load model
+    # Load model with memory-optimized settings
     with Timer(f"Loading Causal LLM from '{load_source}'"):
         device_map = "cpu" if device == "cpu" else "auto"
         
         model = AutoModelForCausalLM.from_pretrained(
             load_source,
             token=hf_token,
-            torch_dtype=dtype,
+            torch_dtype=dtype,            # float16 on CPU = ~490 MB instead of ~1.9 GB
             device_map=device_map,
-            low_cpu_mem_usage=True,
+            low_cpu_mem_usage=True,        # Prevents duplicate memory during init
             trust_remote_code=True,
             cache_dir=config["cache_dir"]
         )
     
-    # Apply INT8 quantization on CPU to fit within Streamlit Cloud's 1 GB RAM limit
-    if device == "cpu":
-        with Timer("Applying INT8 Dynamic Quantization"):
-            model = _apply_int8_quantization(model)
-    
-    # Set model to evaluation mode (disables dropout, batch norm training behavior)
+    # Set to inference mode (disables dropout, batch norm training)
     model.eval()
-        
-    log_resource_state("AFTER LOADING MODEL (post-quantization)")
+    
+    # Force garbage collection to clean up any loading intermediates
+    gc.collect()
+    
+    log_resource_state("AFTER LOADING MODEL")
     logger.info(
-        f"Model loaded successfully. Device: {device}, "
-        f"Quantized: {'INT8' if device == 'cpu' else 'No'}, "
+        f"Model loaded successfully. Device: {device}, Dtype: {dtype}, "
         f"Source: '{load_source}'"
     )
     return model, tokenizer

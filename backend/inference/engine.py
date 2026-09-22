@@ -1,5 +1,15 @@
+"""
+DR. MIGI Inference Engine — Direct Model Execution
+====================================================
+Loads and runs the user's fine-tuned DR. MIGI model (suvidh21/dr-migi)
+directly. No external API calls — the model runs in-process on CPU
+(Streamlit Cloud) or GPU (local PC).
+"""
+from __future__ import annotations  # Python 3.9 compatibility for type hints
+
 import os
 import time
+import torch
 from threading import Thread
 from transformers import TextIteratorStreamer
 from backend.model.loader import load_model_and_tokenizer, determine_optimal_device, config
@@ -12,23 +22,16 @@ class DrMigiEngine:
     The main execution orchestrator for DR. MIGI's reasoning brain.
     
     Loads the user's fine-tuned model (suvidh21/dr-migi) directly into memory
-    and runs inference locally. On CPU (Streamlit Cloud), the model is INT8
-    quantized to fit within the 1 GB RAM limit. On local GPU, it runs in
+    and runs inference locally. On CPU (Streamlit Cloud), the model runs in
+    float16 to fit within the 1 GB RAM limit. On local GPU, it runs in
     float16/bfloat16 for maximum speed.
-    
-    Architecture:
-        [Private HF Hub: suvidh21/dr-migi] → (HF_TOKEN auth download) →
-        [Local/Cloud CPU/GPU RAM] → (INT8 quantized on CPU) →
-        [Live inference via generate()]
     """
     def __init__(self, model_name: str | None = None):
         """
-        Initializes the engine by loading the fine-tuned DR. MIGI model
-        and tokenizer into memory.
+        Initializes the engine by loading the fine-tuned DR. MIGI model.
         
-        On your local PC (with GPU): Loads from local disk (models/MIGI-Qwen2.5-0.5B-v1)
-        On Streamlit Cloud (CPU only): Downloads from suvidh21/dr-migi via HF_TOKEN,
-                                       then applies INT8 quantization to fit in 1 GB RAM.
+        On local PC (with GPU): Loads from disk (models/MIGI-Qwen2.5-0.5B-v1)
+        On Streamlit Cloud (CPU): Downloads from suvidh21/dr-migi via HF_TOKEN
         """
         self.device, self.dtype = determine_optimal_device()
         self.model, self.tokenizer = load_model_and_tokenizer(model_name)
@@ -43,13 +46,9 @@ class DrMigiEngine:
 
     def generate_response(self, prompt: str, system_prompt: str | None = None, **generation_kwargs) -> dict:
         """
-        Processes a prompt synchronously and returns the model response alongside performance metrics.
+        Processes a prompt synchronously and returns the model response
+        alongside performance metrics.
         
-        Arguments:
-            prompt: The user's clinical question or message.
-            system_prompt: Optional system-level instructions for the model.
-            **generation_kwargs: Override default generation parameters (max_new_tokens, temperature, etc.)
-            
         Returns:
             dict with keys: response, input_tokens_count, output_tokens_count,
                            duration_seconds, tokens_per_second, device
@@ -73,13 +72,13 @@ class DrMigiEngine:
         
         inputs = self.tokenizer(prompt_text, return_tensors="pt")
         
-        # Move inputs to correct device (CPU for quantized model, CUDA for GPU)
+        # Move inputs to correct device (CPU for cloud, CUDA for local GPU)
         if self.device == "cuda":
             inputs = inputs.to(self.device)
             
         input_len = inputs["input_ids"].shape[1]
         
-        logger.info(f"Prepared inputs with {input_len} prompt tokens. Initiating generation...")
+        logger.info(f"Prepared inputs with {input_len} prompt tokens. Generating...")
         
         # Generate response with the fine-tuned DR. MIGI model
         with torch.no_grad():
@@ -127,7 +126,6 @@ class DrMigiEngine:
         else:
             messages = build_chat_messages(prompt)
 
-        # Local PyTorch streamer
         prompt_text = self.tokenizer.apply_chat_template(
             messages,
             tokenize=False,
@@ -136,7 +134,6 @@ class DrMigiEngine:
         
         inputs = self.tokenizer(prompt_text, return_tensors="pt")
         
-        # Move inputs to correct device
         if self.device == "cuda":
             inputs = inputs.to(self.device)
         
@@ -165,7 +162,3 @@ class DrMigiEngine:
             yield new_text
             
         thread.join()
-
-
-# Required import for torch.no_grad context manager
-import torch

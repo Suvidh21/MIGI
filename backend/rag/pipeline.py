@@ -1,3 +1,5 @@
+from __future__ import annotations  # Python 3.9 compatibility
+
 from backend.inference.engine import DrMigiEngine
 from backend.rag.retriever import MigiRetriever
 from backend.rag.embedder import MigiEmbedder

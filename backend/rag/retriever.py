@@ -1,3 +1,5 @@
+from __future__ import annotations  # Python 3.9 compatibility
+
 import json
 from backend.rag.vector_store import MigiVectorStore
 
