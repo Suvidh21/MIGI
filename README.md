@@ -1,12 +1,25 @@
 
 # DR. MIGI — AI Healthcare Companion
+
+<p align="center">
+  <a href="https://dr-migi.streamlit.app"><img src="https://static.streamlit.io/badges/streamlit_badge_black_white.svg" alt="Streamlit App"></a>
+  &nbsp;
+  <a href="docs/LIVE_DEPLOYMENT_GUIDE.md"><img src="https://img.shields.io/badge/Deployment%20Guide-Streamlit%20%2B%20HuggingFace-blue?logo=huggingface" alt="Deployment Guide"></a>
+</p>
+
+<p align="center">
+  <b>🌐 Live Web App:</b> <a href="https://dr-migi.streamlit.app"><b>https://dr-migi.streamlit.app</b></a> (24/7 Cloud Demo)
+</p>
+
 <p align="center">
   <img src="images/Screenshot%202026-09-19%20153636.png" width="850">
 </p>
 
 DR. MIGI is an intelligent AI healthcare companion designed to assist doctors with **longitudinal patient analysis and clinical decision support**. This repository is built in generations — each one adding a new layer of capability.
 
-> **Current Status: Generation 1 (Clinical Brain) ✅ + Generation 2 (Memory/RAG) ✅**
+> **Current Status: Generation 1 (Clinical Brain) ✅ + Generation 2 (Memory/RAG) ✅ + Live Cloud Deployment ✅**
+> 
+> Full technical walkthrough of the free cloud deployment architecture: **[`docs/LIVE_DEPLOYMENT_GUIDE.md`](docs/LIVE_DEPLOYMENT_GUIDE.md)**.
 <p align="center">
   <img src="images/Screenshot%202026-09-19%20150511.png" width="850">
 </p>
