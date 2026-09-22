@@ -1,8 +1,9 @@
 # PyTorch - Core Deep Learning Framework
 torch
 
-# Hugging Face Transformers - The standard library for loading LLMs
+# Hugging Face Transformers & Hub - Model loading and Serverless Inference API
 transformers
+huggingface_hub
 
 # Accelerate - Helps with memory management and device placement
 accelerate

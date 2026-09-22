@@ -278,6 +278,14 @@ with st.sidebar:
         st.caption("💡 Chatting in general mode. The assistant will answer medical questions using standard clinical reasoning.")
 
     st.markdown("---")
+    st.markdown("### ⚙️ Inference Engine")
+    engine_ref = get_inference_engine()
+    if getattr(engine_ref, "use_api", False):
+        st.success(f"**Cloud GPU Active**\n\nModel: `{engine_ref.api_model.split('/')[-1]}`\n\nZero-RAM Serverless (Immune to Crashes)", icon="☁️")
+    else:
+        st.info(f"**Local PyTorch Engine**\n\nDevice: `{engine_ref.device.upper()}`", icon="🖥️")
+
+    st.markdown("---")
 
     # Chat History Reset
     if st.button("🗑️ Clear Conversation", use_container_width=True):

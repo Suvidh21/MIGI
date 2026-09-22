@@ -113,14 +113,7 @@ class DrMigiRAGPipeline:
             patient_context=retrieved_context
         )
 
-        # Step 3: Format messages into Qwen chat template and generate response
-        prompt_text = self.engine.tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True
-        )
-
-        # Step 4: Run inference through Phase 1 engine
+        # Step 3: Run inference through Phase 1 engine with grounded RAG system prompt
         # Note: We call generate_response with the fully assembled RAG prompt
         metrics = self.engine.generate_response(
             prompt=question,

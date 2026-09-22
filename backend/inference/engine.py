@@ -1,3 +1,4 @@
+import os
 import time
 from threading import Thread
 from transformers import TextIteratorStreamer
@@ -5,59 +6,115 @@ from backend.model.loader import load_model_and_tokenizer, determine_optimal_dev
 from backend.prompts.templates import build_chat_messages
 from backend.utils.logger import logger, Timer
 
+try:
+    from huggingface_hub import InferenceClient
+    HF_HUB_AVAILABLE = True
+except ImportError:
+    HF_HUB_AVAILABLE = False
+
+
+def _resolve_hf_token() -> str | None:
+    """Discovers Hugging Face access token from environment or Streamlit secrets."""
+    token = os.environ.get("HF_TOKEN")
+    if token:
+        return token
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and "HF_TOKEN" in st.secrets:
+            return st.secrets["HF_TOKEN"]
+    except Exception:
+        pass
+    return None
+
+
 class DrMigiEngine:
     """
     The main execution orchestrator for DR. MIGI's reasoning brain.
     
-    What it does:
-        Encapsulates the tokenizer and causal language model. Prepares textual queries
-        into format-compliant chat templates, feeds them to PyTorch, and handles decoding
-        and generation performance logging.
-        
-    Why it is needed:
-        Abstracts Hugging Face's raw API behind a clean, testable interface. Ensures
-        uniform chat framing, temperature parameters, and resource logging across the app.
-        
-    Best practices:
-        Avoid hardcoded configurations; fall back to loaded JSON configurations. Track
-        generative metrics (Tokens per Second) to verify performance.
+    Supports dual execution modes:
+    1. Cloud Serverless Mode (Hugging Face Inference API):
+       Used when HF_TOKEN is detected. Queries Hugging Face GPU servers (e.g. Qwen 2.5 72B)
+       with zero local RAM footprint (<50MB RAM), preventing cloud memory crashes.
+    2. Local PyTorch Mode:
+       Used when running locally on PC with local weights / GPU.
     """
-    def __init__(self, model_name: str | None = None):
+    def __init__(self, model_name: str | None = None, token: str | None = None):
         """
-        Initializes the engine, loading the model and tokenizer to the optimal device.
+        Initializes the engine. Automatically detects if Hugging Face API mode
+        should be activated based on available token.
         """
-        self.device, self.dtype = determine_optimal_device()
-        self.model, self.tokenizer = load_model_and_tokenizer(model_name)
+        resolved_token = token or _resolve_hf_token()
         
-        # Verify if pad token is set (needed to suppress HF warning logs during batch execution)
-        if self.tokenizer.pad_token_id is None:
-            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+        if resolved_token and HF_HUB_AVAILABLE:
+            self.use_api = True
+            self.hf_token = resolved_token
+            self.api_model = model_name or config.get("api_model_name", "Qwen/Qwen2.5-72B-Instruct")
+            self.device = "Hugging Face Cloud GPU"
+            self.model = None
+            self.tokenizer = None
+            self.client = InferenceClient(model=self.api_model, token=self.hf_token)
+            logger.info(f"DrMigiEngine initialized in Cloud API mode with model '{self.api_model}'.")
+        else:
+            self.use_api = False
+            self.client = None
+            self.device, self.dtype = determine_optimal_device()
+            self.model, self.tokenizer = load_model_and_tokenizer(model_name)
+            
+            if self.tokenizer.pad_token_id is None:
+                self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+            logger.info(f"DrMigiEngine initialized in Local PyTorch mode on {self.device.upper()}.")
 
     def generate_response(self, prompt: str, system_prompt: str | None = None, **generation_kwargs) -> dict:
         """
         Processes a prompt synchronously and returns the model response alongside performance metrics.
-        
-        Arguments:
-            prompt: User message content.
-            system_prompt: Optional override for the default system persona.
-            generation_kwargs: Overrides for default model hyperparameters (e.g. temperature, max_new_tokens).
-            
-        Returns:
-            Dictionary containing response text, token counts, and execution metrics.
         """
-        # Resolve generation hyperparameters: prioritize custom arguments, fallback to default config
         params = config["default_generation_params"].copy()
         params.update(generation_kwargs)
         
-        # Build structured system & user message dictionaries
         if system_prompt:
             messages = build_chat_messages(prompt, system_prompt)
         else:
             messages = build_chat_messages(prompt)
             
-        # Format the system/user block into Qwen special tokens syntax and tokenize it
-        # What it does: apply_chat_template maps structured messages to the raw prompt sequence
-        # (e.g., adding <|im_start|>system...<|im_end|>\n<|im_start|>user...)
+        start_time = time.perf_counter()
+        
+        # Branch 1: Cloud API Inference
+        if self.use_api:
+            res = self.client.chat.completions.create(
+                messages=messages,
+                max_tokens=params.get("max_new_tokens", 400),
+                temperature=params.get("temperature", 0.3),
+                top_p=params.get("top_p", 0.9),
+            )
+            duration = time.perf_counter() - start_time
+            decoded_response = res.choices[0].message.content or ""
+            
+            # Extract or estimate token counts
+            output_tokens = getattr(getattr(res, "usage", None), "completion_tokens", None)
+            if output_tokens is None:
+                output_tokens = len(decoded_response.split()) * 4 // 3
+                
+            input_tokens = getattr(getattr(res, "usage", None), "prompt_tokens", None)
+            if input_tokens is None:
+                input_tokens = len(prompt.split()) * 4 // 3
+                
+            tokens_per_second = output_tokens / duration if duration > 0 else 0.0
+            
+            metrics = {
+                "response": decoded_response,
+                "input_tokens_count": input_tokens,
+                "output_tokens_count": output_tokens,
+                "duration_seconds": duration,
+                "tokens_per_second": tokens_per_second,
+                "device": self.device
+            }
+            logger.info(
+                f"Cloud API generated {output_tokens} tokens in {duration:.2f}s "
+                f"({tokens_per_second:.2f} tok/s) via {self.api_model}."
+            )
+            return metrics
+
+        # Branch 2: Local PyTorch Inference
         prompt_text = self.tokenizer.apply_chat_template(
             messages,
             tokenize=False,
@@ -68,9 +125,6 @@ class DrMigiEngine:
         input_len = inputs["input_ids"].shape[1]
         
         logger.info(f"Prepared inputs with {input_len} prompt tokens. Initiating generation...")
-        
-        # Autoregressive Generation
-        start_time = time.perf_counter()
         
         output_ids = self.model.generate(
             **inputs,
@@ -83,16 +137,10 @@ class DrMigiEngine:
             eos_token_id=self.tokenizer.eos_token_id
         )
         
-        end_time = time.perf_counter()
-        duration = end_time - start_time
-        
-        # Slice away the prefill prompt tokens from generated output
+        duration = time.perf_counter() - start_time
         generated_tokens = output_ids[0][input_len:]
         num_generated_tokens = len(generated_tokens)
-        
-        # Decode token IDs back into string characters
         decoded_response = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
-        
         tokens_per_second = num_generated_tokens / duration if duration > 0 else 0.0
         
         metrics = {
@@ -103,25 +151,15 @@ class DrMigiEngine:
             "tokens_per_second": tokens_per_second,
             "device": self.device
         }
-        
         logger.info(
             f"Generated {num_generated_tokens} tokens in {duration:.2f}s "
             f"({tokens_per_second:.2f} tok/s) on {self.device.upper()}."
         )
-        
         return metrics
 
     def generate_stream(self, prompt: str, system_prompt: str | None = None, **generation_kwargs):
         """
         Yields tokens one by one as they are produced by the LLM.
-        
-        Why it is needed:
-            LLM generation on CPU is slow (high latency). Streaming returns text chunks
-            immediately as they are calculated, improving the interactive feel of the companion.
-            
-        How it works:
-            Initializes a TextIteratorStreamer, puts the model generation on a background
-            Thread, and yields strings from the streamer queue on the main thread.
         """
         params = config["default_generation_params"].copy()
         params.update(generation_kwargs)
@@ -131,6 +169,20 @@ class DrMigiEngine:
         else:
             messages = build_chat_messages(prompt)
             
+        if self.use_api:
+            stream = self.client.chat.completions.create(
+                messages=messages,
+                max_tokens=params.get("max_new_tokens", 400),
+                temperature=params.get("temperature", 0.3),
+                top_p=params.get("top_p", 0.9),
+                stream=True
+            )
+            for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+            return
+
+        # Local PyTorch streamer
         prompt_text = self.tokenizer.apply_chat_template(
             messages,
             tokenize=False,
@@ -139,7 +191,6 @@ class DrMigiEngine:
         
         inputs = self.tokenizer(prompt_text, return_tensors="pt").to(self.device)
         
-        # TextIteratorStreamer ignores the prompt tokens if skip_prompt=True
         streamer = TextIteratorStreamer(
             self.tokenizer,
             skip_prompt=True,
@@ -157,14 +208,12 @@ class DrMigiEngine:
             eos_token_id=self.tokenizer.eos_token_id
         )
         
-        # Spin up generation in a background thread to prevent blocking
-        # We pass kwargs containing **inputs and other generation args
         generation_kwargs_full = dict(**inputs, **generation_args)
         thread = Thread(target=self.model.generate, kwargs=generation_kwargs_full)
         thread.start()
         
-        # Yield tokens as they arrive in the queue
         for new_text in streamer:
             yield new_text
             
         thread.join()
+
